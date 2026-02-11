@@ -2,22 +2,31 @@
 
 import { useEffect, useRef } from "react";
 
-type Particle = {
+type ThreadPoint = {
   x: number;
   y: number;
   vx: number;
   vy: number;
-  radius: number;
 };
 
-const PARTICLE_COUNT = 80;
-const FOLLOW_FORCE = 0.12;
-const DAMPING = 0.98;
-const MAX_SPEED = 30;
+type Thread = {
+  points: ThreadPoint[];
+  width: number;
+  hue: number;
+};
+
+const THREAD_COUNT = 36;
+const SEGMENT_COUNT = 18;
+const SEGMENT_LENGTH = 16;
+const FOLLOW_FORCE = 0.18;
+const DAMPING = 0.92;
+const MAX_SPEED = 24;
+const STIFFNESS = 0.50;
+const CONSTRAINT_ITERATIONS = 2;
 
 export default function FluidCursorBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const particlesRef = useRef<Particle[]>([]);
+  const threadsRef = useRef<Thread[]>([]);
   const cursorRef = useRef({ x: 0, y: 0, active: false });
   const animationRef = useRef<number | null>(null);
 
@@ -39,16 +48,30 @@ export default function FluidCursorBackground() {
       context.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
     };
 
-    // Seed particles around center with randomized velocity/size.
-    const initializeParticles = () => {
+    // Seed threads around center with fixed-length segments.
+    const initializeThreads = () => {
       const { innerWidth, innerHeight } = window;
-      particlesRef.current = Array.from({ length: PARTICLE_COUNT }, () => ({
-        x: innerWidth * 0.5 + (Math.random() - 0.5) * 120,
-        y: innerHeight * 0.5 + (Math.random() - 0.5) * 120,
-        vx: (Math.random() - 0.5) * 4,
-        vy: (Math.random() - 0.5) * 4,
-        radius: 12 + Math.random() * 26,
-      }));
+      threadsRef.current = Array.from({ length: THREAD_COUNT }, () => {
+        const angle = Math.random() * Math.PI * 2;
+        const startX = innerWidth * 0.5 + Math.cos(angle) * 60;
+        const startY = innerHeight * 0.5 + Math.sin(angle) * 60;
+        const points: ThreadPoint[] = [];
+
+        for (let i = 0; i < SEGMENT_COUNT; i += 1) {
+          points.push({
+            x: startX - Math.cos(angle) * i * SEGMENT_LENGTH,
+            y: startY - Math.sin(angle) * i * SEGMENT_LENGTH,
+            vx: 0,
+            vy: 0,
+          });
+        }
+
+        return {
+          points,
+          width: 10 + Math.random() * 2.5,
+          hue: 1 + Math.random() * 30,
+        };
+      });
     };
 
     const onPointerMove = (event: PointerEvent) => {
@@ -63,22 +86,24 @@ export default function FluidCursorBackground() {
 
     // Initial setup and event wiring.
     resize();
-    initializeParticles();
+    initializeThreads();
 
     window.addEventListener("resize", resize);
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerdown", onPointerMove);
     window.addEventListener("pointerleave", onPointerLeave);
 
-    // Render loop: fade previous frame, then draw glowing particles chasing cursor.
+    // Render loop: fade previous frame, then draw trailing threads chasing cursor.
     const render = () => {
       animationRef.current = requestAnimationFrame(render);
 
       context.globalCompositeOperation = "destination-in";
-      context.fillStyle = "rgba(0, 0, 0, 0.9)";
+      context.fillStyle = "rgba(172, 38, 38, 0)";
       context.fillRect(0, 0, canvas.width, canvas.height);
 
       context.globalCompositeOperation = "lighter";
+      context.lineCap = "round";
+      context.lineJoin = "round";
 
       const { x: targetX, y: targetY, active } = cursorRef.current;
       const { innerWidth, innerHeight } = window;
@@ -87,50 +112,74 @@ export default function FluidCursorBackground() {
       const goalX = active ? targetX : fallbackX;
       const goalY = active ? targetY : fallbackY;
 
-      for (const particle of particlesRef.current) {
-        // Move particles toward the cursor with light noise and damping.
-        const dx = goalX - particle.x;
-        const dy = goalY - particle.y;
-        particle.vx += dx * FOLLOW_FORCE * 0.01;
-        particle.vy += dy * FOLLOW_FORCE * 0.01;
+      for (let threadIdx = 0; threadIdx < threadsRef.current.length; threadIdx += 1) {
+        const thread = threadsRef.current[threadIdx];
+        const head = thread.points[0];
 
-        particle.vx += (Math.random() - 0.5) * 0.6;
-        particle.vy += (Math.random() - 0.5) * 0.6;
+        // Move head toward the cursor with minimal elasticity.
+        const dx = goalX - head.x;
+        const dy = goalY - head.y;
+        head.vx += dx * FOLLOW_FORCE * 0.01;
+        head.vy += dy * FOLLOW_FORCE * 0.01;
 
-        particle.vx *= DAMPING;
-        particle.vy *= DAMPING;
+        head.vx += (Math.random() - 0.5) * 0.3;
+        head.vy += (Math.random() - 0.5) * 0.3;
 
-        const speed = Math.hypot(particle.vx, particle.vy);
+        head.vx *= DAMPING;
+        head.vy *= DAMPING;
+
+        const speed = Math.hypot(head.vx, head.vy);
         if (speed > MAX_SPEED) {
-          particle.vx = (particle.vx / speed) * MAX_SPEED;
-          particle.vy = (particle.vy / speed) * MAX_SPEED;
+          head.vx = (head.vx / speed) * MAX_SPEED;
+          head.vy = (head.vy / speed) * MAX_SPEED;
         }
 
-        particle.x += particle.vx;
-        particle.y += particle.vy;
+        head.x += head.vx;
+        head.y += head.vy;
 
-        if (particle.x < -100) particle.x = innerWidth + 100;
-        if (particle.x > innerWidth + 100) particle.x = -100;
-        if (particle.y < -100) particle.y = innerHeight + 100;
-        if (particle.y > innerHeight + 100) particle.y = -100;
+        // Keep threads inside bounds by resetting when head drifts too far.
+        if (
+          head.x < -200 ||
+          head.x > innerWidth + 200 ||
+          head.y < -200 ||
+          head.y > innerHeight + 200
+        ) {
+          const angle = Math.random() * Math.PI * 2;
+          head.x = goalX + Math.cos(angle) * 40;
+          head.y = goalY + Math.sin(angle) * 40;
+          for (let i = 1; i < thread.points.length; i += 1) {
+            thread.points[i].x = head.x - Math.cos(angle) * i * SEGMENT_LENGTH;
+            thread.points[i].y = head.y - Math.sin(angle) * i * SEGMENT_LENGTH;
+            thread.points[i].vx = 0;
+            thread.points[i].vy = 0;
+          }
+        }
 
-        // Draw a soft radial glow per particle.
-        const gradient = context.createRadialGradient(
-          particle.x,
-          particle.y,
-          0,
-          particle.x,
-          particle.y,
-          particle.radius
-        );
-        gradient.addColorStop(0, "rgba(120, 220, 255, 0.35)");
-        gradient.addColorStop(0.4, "rgba(120, 220, 255, 0.2)");
-        gradient.addColorStop(1, "rgba(120, 220, 255, 0)");
+        // Apply fixed-length constraints with spread multiplier based on motion speed.
+        const spreadFactor = 0.8 + Math.min(speed / MAX_SPEED, 1) * 1.4;
+        for (let iteration = 0; iteration < CONSTRAINT_ITERATIONS; iteration += 1) {
+          for (let i = 1; i < thread.points.length; i += 1) {
+            const prev = thread.points[i - 1];
+            const point = thread.points[i];
+            const segDx = prev.x - point.x;
+            const segDy = prev.y - point.y;
+            const distance = Math.hypot(segDx, segDy) || 1;
+            const targetDist = SEGMENT_LENGTH * spreadFactor;
+            const diff = (distance - targetDist) / distance;
+            point.x += segDx * diff * STIFFNESS;
+            point.y += segDy * diff * STIFFNESS;
+          }
+        }
 
-        context.fillStyle = gradient;
+        // Draw a glowing thread stroke.
+        context.strokeStyle = `hsla(${thread.hue}, 100%, 5%, 1)`;
+        context.lineWidth = thread.width;
         context.beginPath();
-        context.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
-        context.fill();
+        context.moveTo(thread.points[0].x, thread.points[0].y);
+        for (let i = 1; i < thread.points.length; i += 1) {
+          context.lineTo(thread.points[i].x, thread.points[i].y);
+        }
+        context.stroke();
       }
     };
 
