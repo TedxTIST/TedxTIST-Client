@@ -15,10 +15,11 @@ type Thread = {
   hue: number;
   driftX: number;
   driftY: number;
+  targetOffsetX: number;
+  targetOffsetY: number;
 };
 
-/* 
-the following parameters were tuned through trial and error to achieve a visually pleasing balance of responsiveness, fluidity, and thread separation. Adjusting these values will significantly change the behavior and appearance of the cursor trails:
+/* the following parameters were tuned through trial and error to achieve a visually pleasing balance of responsiveness, fluidity, and thread separation. Adjusting these values will significantly change the behavior and appearance of the cursor trails:
 
 - THREAD_COUNT: More threads create a denser effect but can reduce performance. 360 provides a good balance.
 - SEGMENT_COUNT: More segments make smoother curves but increase computation. 18 allows for fluid motion without excessive CPU load.
@@ -27,16 +28,20 @@ the following parameters were tuned through trial and error to achieve a visuall
 - DAMPING: Controls how quickly the threads slow down. 0.92 provides a natural decay of motion.
 - MAX_SPEED: Caps the velocity of the thread heads to prevent erratic behavior. 24 keeps the motion controlled even with fast cursor movements.
 - CONSTRAINT_ITERATIONS: More iterations improve the accuracy of the segment length constraints but increase CPU usage. 10 iterations ensure the threads maintain their shape without excessive computation.
+- BUNDLE_RADIUS: Controls the overall thickness/spread of the thread bundle around the cursor.
+- SPREAD_SENSITIVITY: Controls how sensitive the bundle is to movement. Lower values make it pinch tighter with less movement.
 */
 
 const THREAD_COUNT = 360;
 const MIN_SEGMENTS = 8;
-const SEGMENT_COUNT = 18;
+const SEGMENT_COUNT = 100;
 const SEGMENT_LENGTH = 16;
-const FOLLOW_FORCE = 0.68;
-const DAMPING = 0.92;
-const MAX_SPEED = 24;
-const CONSTRAINT_ITERATIONS = 10;
+const FOLLOW_FORCE = 2;
+const DAMPING = 0.84;
+const MAX_SPEED = 100;
+const CONSTRAINT_ITERATIONS = 20;
+const BUNDLE_RADIUS = 60;
+const SPREAD_SENSITIVITY = 12; // NEW: Tune this to change the pinch responsiveness
 
 export default function FluidCursorBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -67,14 +72,17 @@ export default function FluidCursorBackground() {
     const initializeThreads = () => {
       const { innerWidth, innerHeight } = window;
       threadsRef.current = Array.from({ length: THREAD_COUNT }, () => {
-        const angle = Math.random() * Math.PI * 2; // Random initial direction to avoid circular layout.
-        const jitter = (Math.random() - 0.5) * 0.6; // Add some random jitter to the drift angle for visual variety.
-        const driftAngle = angle + jitter; // Base drift direction on initial angle plus jitter for natural swirling motion.
-        const startX = innerWidth * 0.5 + (Math.random() - 0.5) * 140; // Randomize initial positions near center.
-        const startY = innerHeight * 0.5 + (Math.random() - 0.5) * 140; // Same as above, but for Y coordinate.
+        const angle = Math.random() * Math.PI * 2;
+        const jitter = (Math.random() - 0.5) * 0.6;
+        const driftAngle = angle + jitter;
+        const startX = innerWidth * 0.5 + (Math.random() - 0.5) * 140;
+        const startY = innerHeight * 0.5 + (Math.random() - 0.5) * 140;
         const segmentCount =
           MIN_SEGMENTS + Math.floor(Math.random() * (SEGMENT_COUNT - MIN_SEGMENTS + 1));
-        const points: ThreadPoint[] = []; // Create a chain of points for the thread, each initialized at a fixed distance from the previous one based on the initial angle. This sets up the initial shape of the thread.
+        const points: ThreadPoint[] = [];
+        
+        const offsetRadius = Math.random() * BUNDLE_RADIUS;
+        const offsetTheta = Math.random() * Math.PI * 2;
 
         for (let i = 0; i < segmentCount; i += 1) {
           points.push({
@@ -86,12 +94,13 @@ export default function FluidCursorBackground() {
         }
 
         return {
-          // Randomize thread width and hue for visual variety.
           points,
           width: 5 + Math.random() * 2.5,
           hue: Math.random() * 15,
           driftX: Math.cos(driftAngle),
           driftY: Math.sin(driftAngle),
+          targetOffsetX: Math.cos(offsetTheta) * offsetRadius,
+          targetOffsetY: Math.sin(offsetTheta) * offsetRadius,
         };
       });
     };
@@ -121,6 +130,13 @@ export default function FluidCursorBackground() {
     window.addEventListener("pointerdown", onPointerMove);
     window.addEventListener("pointerleave", onPointerLeave);
 
+    // --- NEW VARIABLES FOR SPREAD DYNAMICS ---
+    let prevCursorX = window.innerWidth * 0.5;
+    let prevCursorY = window.innerHeight * 0.5;
+    let smoothedSpeed = 0;
+    let spreadFactor = 1;
+    // -----------------------------------------
+
     // Render loop: fade previous frame, then draw trailing threads chasing cursor.
     const render = () => {
       animationRef.current = requestAnimationFrame(render);
@@ -137,8 +153,27 @@ export default function FluidCursorBackground() {
       const { innerWidth, innerHeight } = window;
       const fallbackX = innerWidth * 0.5;
       const fallbackY = innerHeight * 0.5;
-      const goalX = active ? targetX : fallbackX;
-      const goalY = active ? targetY : fallbackY;
+      const baseGoalX = active ? targetX : fallbackX;
+      const baseGoalY = active ? targetY : fallbackY;
+      
+      // --- NEW: CALCULATE SPEED AND DYNAMIC SPREAD ---
+      const cursorDx = baseGoalX - prevCursorX;
+      const cursorDy = baseGoalY - prevCursorY;
+      const currentSpeed = Math.hypot(cursorDx, cursorDy);
+
+      prevCursorX = baseGoalX;
+      prevCursorY = baseGoalY;
+
+      // Smooth the speed measurement to prevent harsh snapping
+      smoothedSpeed = smoothedSpeed * 0.85 + currentSpeed * 0.15;
+
+      // Calculate the target spread (1 when slow/stopped, 0 when moving fast)
+      const targetSpread = 1 - Math.min(smoothedSpeed / SPREAD_SENSITIVITY, 1);
+      
+      // Smooth out the transition of the actual spread value
+      spreadFactor = spreadFactor * 0.9 + targetSpread * 0.1;
+      // -----------------------------------------------
+
       const idleTime = performance.now() - lastMoveRef.current.time;
       const idleFactor = idleTime > 180 ? Math.min((idleTime - 180) / 1200, 1) : 0;
 
@@ -146,18 +181,26 @@ export default function FluidCursorBackground() {
         const thread = threadsRef.current[threadIdx];
         const head = thread.points[0];
 
-        // Move head toward the cursor with minimal elasticity.
-        const dx = goalX - head.x;
-        const dy = goalY - head.y;
+        // UPDATED: Scale the offset by the dynamic spreadFactor
+        // When moving fast, spreadFactor approaches 0, pinching the bundle.
+        const threadGoalX = baseGoalX + thread.targetOffsetX * spreadFactor;
+        const threadGoalY = baseGoalY + thread.targetOffsetY * spreadFactor;
+
+        // Move head toward its unique target with minimal elasticity.
+        const dx = threadGoalX - head.x; 
+        const dy = threadGoalY - head.y; 
         head.vx += dx * FOLLOW_FORCE * 0.01;
         head.vy += dy * FOLLOW_FORCE * 0.01;
-
+        
+        // Add some random noise to the head's velocity for a more organic, fluid motion.
         head.vx += (Math.random() - 0.5) * 0.3;
         head.vy += (Math.random() - 0.5) * 0.3;
 
+        // Apply damping to slow down the head over time, creating a natural decay of motion.
         head.vx *= DAMPING;
         head.vy *= DAMPING;
 
+        // Cap the head's speed to prevent erratic behavior during fast cursor movements.
         const speed = Math.hypot(head.vx, head.vy);
         if (speed > MAX_SPEED) {
           head.vx = (head.vx / speed) * MAX_SPEED;
@@ -175,8 +218,8 @@ export default function FluidCursorBackground() {
           head.y > innerHeight + 200
         ) {
           const angle = Math.random() * Math.PI * 2;
-          head.x = goalX + Math.cos(angle) * 40;
-          head.y = goalY + Math.sin(angle) * 40;
+          head.x = threadGoalX + Math.cos(angle) * 40; 
+          head.y = threadGoalY + Math.sin(angle) * 40; 
           for (let i = 1; i < thread.points.length; i += 1) {
             thread.points[i].x = head.x - Math.cos(angle) * i * SEGMENT_LENGTH;
             thread.points[i].y = head.y - Math.sin(angle) * i * SEGMENT_LENGTH;
@@ -201,7 +244,7 @@ export default function FluidCursorBackground() {
 
         // When idle, gently push non-head segments outward to separate threads slightly.
         if (idleFactor > 0) {
-          const lengthFactor = Math.min(MIN_SEGMENTS / thread.points.length, 30); // Longer threads get a stronger push to prevent tangling, while shorter threads maintain a tighter shape. 
+          const lengthFactor = Math.min(MIN_SEGMENTS / thread.points.length, 30);
           const driftStrength = 0.09 * idleFactor * lengthFactor;
           for (let i = 1; i < thread.points.length; i += 1) {
             thread.points[i].x += thread.driftX * driftStrength;
@@ -210,12 +253,12 @@ export default function FluidCursorBackground() {
         }
 
         // Draw a thread-like stroke (no glow); add a subtle shadow and keep a future texture hook.
-        context.strokeStyle = "rgba(195, 0, 0, 0.73)"; // Solid red with some opacity for a vibrant look. Adjust alpha for more or less visibility.
-        context.shadowColor = `hsla(${thread.hue}, 60%, 0%, 0.25)`;
-        // context.shadowBlur = 3;
+        context.strokeStyle = `hsla(${thread.hue}, 100%, 20%, 1)`; 
+        //context.shadowColor = `hsla(${thread.hue}, 40%, 0%, 0.12)`;
+        // context.shadowBlur = 1;
         // context.shadowOffsetX = 0;
         // context.shadowOffsetY = 0;
-        // context.lineWidth = thread.width;
+        //context.lineWidth = thread.width; 
         context.beginPath();
         context.moveTo(thread.points[0].x, thread.points[0].y);
         for (let i = 1; i < thread.points.length; i += 1) {
