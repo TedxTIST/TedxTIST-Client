@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Threads Texture</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            /* Creates the slight vignette effect seen in the dark background */
+            background: radial-gradient(circle at center, #1c1c1e 0%, #0d0d0f 100%);
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="threadCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('threadCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let width, height;
+
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        drawTexture();
+    }
+
+    window.addEventListener('resize', resize);
+
+    function drawThread(isDiagonalSweep) {
+        ctx.beginPath();
+        
+        let startX, startY, endX, endY, cp1X, cp1Y, cp2X, cp2Y;
+
+        if (isDiagonalSweep) {
+            // Creates the denser cluster sweeping diagonally from bottom-left to top-right
+            startX = (Math.random() * width * 0.6) - width * 0.2;
+            startY = (Math.random() * height * 0.6) + height * 0.4;
+            
+            endX = startX + width * 0.6 + (Math.random() * width * 0.2);
+            endY = startY - height * 0.6 - (Math.random() * height * 0.2);
+
+            // Tighter control points for straighter, sweeping lines
+            cp1X = startX + (endX - startX) * 0.3 + (Math.random() - 0.5) * 150;
+            cp1Y = startY + (endY - startY) * 0.3 + (Math.random() - 0.5) * 150;
+            cp2X = startX + (endX - startX) * 0.7 + (Math.random() - 0.5) * 150;
+            cp2Y = startY + (endY - startY) * 0.7 + (Math.random() - 0.5) * 150;
+
+            // Slightly more opaque for the main cluster
+            ctx.strokeStyle = `rgba(255, 255, 255, ${Math.random() * 0.035})`;
+        } else {
+            // Random chaotic, swirling background threads
+            startX = Math.random() * width;
+            startY = Math.random() * height;
+            
+            let length = 100 + Math.random() * 500;
+            let angle = Math.random() * Math.PI * 2;
+            
+            endX = startX + Math.cos(angle) * length;
+            endY = startY + Math.sin(angle) * length;
+
+            // Wide control points for very curly, erratic lines
+            cp1X = startX + (Math.random() - 0.5) * length * 2;
+            cp1Y = startY + (Math.random() - 0.5) * length * 2;
+            cp2X = endX + (Math.random() - 0.5) * length * 2;
+            cp2Y = endY + (Math.random() - 0.5) * length * 2;
+
+            // Very faint for background details
+            ctx.strokeStyle = `rgba(255, 255, 255, ${Math.random() * 0.015})`;
+        }
+
+        ctx.lineWidth = 0.2 + Math.random() * 0.6;
+        ctx.moveTo(startX, startY);
+        ctx.bezierCurveTo(cp1X, cp1Y, cp2X, cp2Y, endX, endY);
+        ctx.stroke();
+    }
+
+    function drawTexture() {
+        ctx.clearRect(0, 0, width, height);
+        
+        // Draw random chaotic background threads
+        const backgroundThreads = 4000;
+        for (let i = 0; i < backgroundThreads; i++) {
+            drawThread(false);
+        }
+
+        // Draw the denser diagonal sweep
+        const sweepThreads = 1500;
+        for (let i = 0; i < sweepThreads; i++) {
+            drawThread(true);
+        }
+    }
+
+    // Initialize
+    resize();
+</script>
+
+</body>
+</html>

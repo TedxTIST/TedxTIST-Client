@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thread Background (WebGL)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1a1a; }
+  canvas { display: block; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+/*
+ * WebGL Thread Background
+ * ─────────────────────────────────────────────────────────────────
+ * Faithful recreation of background.html (Canvas 2D) using WebGL.
+ *
+ * Physics (CPU, identical to original):
+ *   – 20,000 threads stored in flat Float32Arrays
+ *   – Flow-field driven by layered sine/cosine noise
+ *   – Mouse repulsion / flow-blending within 250px radius
+ *   – Threads wrap around screen edges
+ *
+ * Rendering (GPU):
+ *   Pass 1 — draw 20k GL_LINES into lineFBO
+ *   Pass 2 — composite:
+ *     a) blit faded previous composite (histA → histB, rgb×0.55)
+ *        equivalent to ctx.fillStyle='rgba(26,26,26,0.45)' trail
+ *     b) alpha-blend new lines on top
+ *   Pass 3 — blit histB to screen
+ *   Ping-pong: swap histA ↔ histB each frame
+ */
+
+// ─── Canvas & WebGL ──────────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const gl = canvas.getContext('webgl', {
+  antialias: false, alpha: false,
+  preserveDrawingBuffer: false,
+  powerPreference: 'high-performance'
+});
+if (!gl) { document.body.textContent = 'WebGL not supported'; throw 0; }
+
+// ─── Shader sources ───────────────────────────────────────────────────────────
+// Renders line segments; per-vertex position (px) and alpha
+const VS_LINE = `
+attribute vec2 a_pos;
+attribute float a_alpha;
+uniform vec2 u_res;
+varying float v_alpha;
+void main() {
+  vec2 clip = (a_pos / u_res) * 2.0 - 1.0;
+  clip.y = -clip.y;
+  gl_Position = vec4(clip, 0.0, 1.0);
+  v_alpha = a_alpha;
+}`;
+
+const FS_LINE = `
+precision mediump float;
+varying float v_alpha;
+void main() {
+  // #cdcdcd = vec3(0.804, 0.804, 0.804)
+  gl_FragColor = vec4(0.804, 0.804, 0.804, v_alpha);
+}`;
+
+// Fullscreen quad vertex shader (clip-space -1..1 quad, UV flipped for GL)
+const VS_QUAD = `
+attribute vec2 a_pos;
+varying vec2 v_uv;
+void main() {
+  v_uv = vec2(a_pos.x * 0.5 + 0.5, -a_pos.y * 0.5 + 0.5);
+  gl_Position = vec4(a_pos, 0.0, 1.0);
+}`;
+
+// Fades the history toward #1a1a1a (0.102, 0.102, 0.102):
+//   new = old * 0.55 + bg * 0.45
+// Equivalent to ctx.fillStyle='rgba(26,26,26,0.45)' fillRect each frame
+const FS_FADE = `
+precision mediump float;
+uniform sampler2D u_tex;
+varying vec2 v_uv;
+void main() {
+  vec3 c = texture2D(u_tex, v_uv).rgb;
+  vec3 bg = vec3(0.102, 0.102, 0.102); // #1a1a1a
+  gl_FragColor = vec4(c * 0.55 + bg * 0.45, 1.0);
+}`;
+
+// Simple texture blit
+const FS_BLIT = `
+precision mediump float;
+uniform sampler2D u_tex;
+varying vec2 v_uv;
+void main() {
+  gl_FragColor = texture2D(u_tex, v_uv);
+}`;
+
+// ─── GL helpers ───────────────────────────────────────────────────────────────
+function mkShader(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src.trim());
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+    throw new Error(gl.getShaderInfoLog(s));
+  return s;
+}
+
+function mkProgram(vs, fs) {
+  const p = gl.createProgram();
+  gl.attachShader(p, mkShader(gl.VERTEX_SHADER,   vs));
+  gl.attachShader(p, mkShader(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS))
+    throw new Error(gl.getProgramInfoLog(p));
+  return p;
+}
+
+function mkFBO(w, h) {
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  const fb = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  return { fb, tex };
+}
+
+// ─── Compile programs ─────────────────────────────────────────────────────────
+const lineProg = mkProgram(VS_LINE, FS_LINE);
+const fadeProg = mkProgram(VS_QUAD, FS_FADE);
+const blitProg = mkProgram(VS_QUAD, FS_BLIT);
+
+const lineA = {
+  pos:   gl.getAttribLocation(lineProg,  'a_pos'),
+  alpha: gl.getAttribLocation(lineProg,  'a_alpha'),
+  res:   gl.getUniformLocation(lineProg, 'u_res'),
+};
+const fadeA = {
+  pos: gl.getAttribLocation(fadeProg, 'a_pos'),
+  tex: gl.getUniformLocation(fadeProg, 'u_tex'),
+};
+const blitA = {
+  pos: gl.getAttribLocation(blitProg, 'a_pos'),
+  tex: gl.getUniformLocation(blitProg, 'u_tex'),
+};
+
+// ─── Fullscreen quad buffer ───────────────────────────────────────────────────
+const quadBuf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+  -1,-1,  1,-1,  -1, 1,
+  -1, 1,  1,-1,   1, 1
+]), gl.STATIC_DRAW);
+
+function drawQuad(prog, aPosLoc) {
+  gl.useProgram(prog);
+  gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+  gl.enableVertexAttribArray(aPosLoc);
+  gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, 0, 0);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+}
+
+// ─── Thread line buffers ──────────────────────────────────────────────────────
+const NUM_THREADS = 20000;
+const posData   = new Float32Array(NUM_THREADS * 4); // 2 end-points × (x,y)
+const alphaData = new Float32Array(NUM_THREADS * 2); // 2 end-points × alpha
+
+const posBuf   = gl.createBuffer();
+const alphaBuf = gl.createBuffer();
+
+// ─── Physics state ────────────────────────────────────────────────────────────
+const FIELD_RES = 10;
+let fieldCols, fieldRows, flowField;
+
+let tx     = new Float32Array(NUM_THREADS);
+let ty     = new Float32Array(NUM_THREADS);
+let tlen   = new Float32Array(NUM_THREADS);
+let tspeed = new Float32Array(NUM_THREADS);
+let talpha = new Float32Array(NUM_THREADS);
+
+let W = 0, H = 0;
+
+function initThreads() {
+  for (let i = 0; i < NUM_THREADS; i++) {
+    tx[i]     = Math.random() * W;
+    ty[i]     = Math.random() * H;
+    tlen[i]   = 8  + Math.random() * 55;
+    tspeed[i] = 0.06 + Math.random() * 0.12;
+    talpha[i] = 0.035 + Math.random() * 0.11;
+  }
+}
+
+// Identical noise function from the original
+function noise(x, y, tv) {
+  const s = 0.0025;
+  return (
+    Math.sin(x * s       + tv * 0.25 + Math.cos(y * s * 0.6  + tv * 0.1)) +
+    Math.sin(y * s * 1.4 - tv * 0.18 + Math.sin(x * s * 0.4  + tv * 0.07)) * 0.6 +
+    Math.cos((x - y) * s * 0.9 + tv * 0.13) * 0.4
+  ) / 2.0;
+}
+
+function updateFlowField(tv) {
+  for (let row = 0; row < fieldRows; row++) {
+    const fy = row * FIELD_RES;
+    for (let col = 0; col < fieldCols; col++) {
+      flowField[row * fieldCols + col] =
+        noise(col * FIELD_RES, fy, tv) * Math.PI * 2.5;
+    }
+  }
+}
+
+function getAngle(x, y) {
+  const col = (x / FIELD_RES) | 0;
+  const row = (y / FIELD_RES) | 0;
+  if (col < 0 || col >= fieldCols || row < 0 || row >= fieldRows) return 0;
+  return flowField[row * fieldCols + col];
+}
+
+// ─── Mouse / touch ────────────────────────────────────────────────────────────
+const mouse = { x: -9999, y: -9999 };
+let hoverStrength = 0, hoverTarget = 0, lastMove = 0;
+
+window.addEventListener('mousemove', e => {
+  mouse.x = e.clientX; mouse.y = e.clientY;
+  hoverTarget = 1; lastMove = performance.now();
+});
+window.addEventListener('mouseleave', () => { hoverTarget = 0; });
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY;
+  hoverTarget = 1; lastMove = performance.now();
+}, { passive: false });
+canvas.addEventListener('touchend', () => { hoverTarget = 0; });
+
+// ─── FBO ping-pong ────────────────────────────────────────────────────────────
+let lineFBO, histA, histB;
+
+function buildFBOs() {
+  lineFBO = mkFBO(W, H);
+  histA   = mkFBO(W, H);
+  histB   = mkFBO(W, H);
+  // Clear history to background colour #1a1a1a
+  [histA, histB].forEach(f => {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, f.fb);
+    gl.clearColor(0.102, 0.102, 0.102, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+  });
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+}
+
+// ─── Resize ───────────────────────────────────────────────────────────────────
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  fieldCols = Math.ceil(W / FIELD_RES) + 2;
+  fieldRows = Math.ceil(H / FIELD_RES) + 2;
+  flowField = new Float32Array(fieldCols * fieldRows);
+  gl.viewport(0, 0, W, H);
+  buildFBOs();
+  initThreads();
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ─── Animation loop ───────────────────────────────────────────────────────────
+const MOUSE_R  = 250;
+const MOUSE_R2 = MOUSE_R * MOUSE_R;
+let t = 0, lastTime = 0;
+
+function frame(ts) {
+  requestAnimationFrame(frame);
+
+  const dt = Math.min(ts - lastTime, 32);
+  lastTime = ts;
+  t += dt * 0.001;
+
+  // Hover strength (same smoothing as original)
+  if (performance.now() - lastMove > 1800) hoverTarget = 0;
+  hoverStrength += (hoverTarget - hoverStrength) * 0.045;
+
+  updateFlowField(t);
+
+  const mx  = mouse.x, my = mouse.y;
+  const hov = hoverStrength;
+
+  // ── Build vertex data ─────────────────────────────────────────────────────
+  for (let i = 0; i < NUM_THREADS; i++) {
+    let x = tx[i], y = ty[i];
+    let angle = getAngle(x, y);
+
+    const ddx   = x - mx, ddy = y - my;
+    const dist2 = ddx * ddx + ddy * ddy;
+    let inf = 0;
+    if (dist2 < MOUSE_R2 && hov > 0.01) {
+      inf = (1 - Math.sqrt(dist2) / MOUSE_R) * hov;
+      const mAngle = Math.atan2(ddy, ddx) + 1.5708; // +π/2 tangent
+      angle = angle + (mAngle - angle) * inf * 0.85;
+    }
+
+    const speed = tspeed[i] * (1 + hov * 4) * dt * 0.05;
+    tx[i] = x + Math.cos(angle) * speed;
+    ty[i] = y + Math.sin(angle) * speed;
+    if      (tx[i] < -5)    tx[i] = W + 5;
+    else if (tx[i] > W + 5) tx[i] = -5;
+    if      (ty[i] < -5)    ty[i] = H + 5;
+    else if (ty[i] > H + 5) ty[i] = -5;
+
+    const hl  = tlen[i] * 0.5 * (1 + inf * 1.2);
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+
+    const base = i * 4;
+    posData[base    ] = x - cos * hl;
+    posData[base + 1] = y - sin * hl;
+    posData[base + 2] = x + cos * hl;
+    posData[base + 3] = y + sin * hl;
+
+    const a = talpha[i] * (0.55 + inf * 1.45);
+    alphaData[i * 2    ] = a;
+    alphaData[i * 2 + 1] = a;
+  }
+
+  // ── Pass 1: render lines → lineFBO ───────────────────────────────────────
+  gl.bindFramebuffer(gl.FRAMEBUFFER, lineFBO.fb);
+  gl.viewport(0, 0, W, H);
+  gl.clearColor(0, 0, 0, 0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  gl.useProgram(lineProg);
+  gl.uniform2f(lineA.res, W, H);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, posData, gl.DYNAMIC_DRAW);
+  gl.enableVertexAttribArray(lineA.pos);
+  gl.vertexAttribPointer(lineA.pos, 2, gl.FLOAT, false, 0, 0);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, alphaBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, alphaData, gl.DYNAMIC_DRAW);
+  gl.enableVertexAttribArray(lineA.alpha);
+  gl.vertexAttribPointer(lineA.alpha, 1, gl.FLOAT, false, 0, 0);
+
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.drawArrays(gl.LINES, 0, NUM_THREADS * 2);
+  gl.disable(gl.BLEND);
+
+  // ── Pass 2a: blit faded histA → histB ────────────────────────────────────
+  gl.bindFramebuffer(gl.FRAMEBUFFER, histB.fb);
+  gl.viewport(0, 0, W, H);
+  gl.disable(gl.BLEND);
+
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, histA.tex);
+  gl.useProgram(fadeProg);
+  gl.uniform1i(fadeA.tex, 0);
+  drawQuad(fadeProg, fadeA.pos);
+
+  // ── Pass 2b: alpha-blend new lines over faded history (histB) ────────────
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, lineFBO.tex);
+  gl.useProgram(blitProg);
+  gl.uniform1i(blitA.tex, 0);
+  drawQuad(blitProg, blitA.pos);
+
+  gl.disable(gl.BLEND);
+
+  // ── Pass 3: blit histB → screen ───────────────────────────────────────────
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(0, 0, W, H);
+
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, histB.tex);
+  gl.useProgram(blitProg);
+  gl.uniform1i(blitA.tex, 0);
+  drawQuad(blitProg, blitA.pos);
+
+  // ── Ping-pong ─────────────────────────────────────────────────────────────
+  const tmp = histA; histA = histB; histB = tmp;
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
