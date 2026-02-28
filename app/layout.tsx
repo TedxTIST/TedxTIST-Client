@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import FluidCursorBackground from "./components/FluidCursorBackground";
+import Header from "./components/Header";
 import ThemeToggle from "./components/ThemeToggle";
 import "./globals.css";
 
@@ -25,11 +26,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="scroll-smooth">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased relative`}
       >
         <FluidCursorBackground />
+        <Header />
         <ThemeToggle />
         <div className="relative z-10">{children}</div>
       </body>

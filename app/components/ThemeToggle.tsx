@@ -35,7 +35,7 @@ export default function ThemeToggle() {
     <Button
       variant="toggle"
       onClick={toggleTheme}
-      className="fixed right-6 top-6 z-20"
+      className="fixed right-6 top-20 z-20"
       aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
     >
       {theme === "dark" ? "Light mode" : "Dark mode"}
