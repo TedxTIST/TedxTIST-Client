@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Button from "./Button";
 
 type ThemeMode = "light" | "dark";
 
@@ -31,12 +32,13 @@ export default function ThemeToggle() {
   }
 
   return (
-    <button
+    <Button
+      variant="toggle"
       onClick={toggleTheme}
-      className="fixed right-6 top-6 z-20 rounded-full border border-black/10 bg-white/80 px-4 py-2 text-sm font-medium text-black shadow-sm backdrop-blur transition hover:bg-white dark:border-white/20 dark:bg-zinc-900/80 dark:text-white"
+      className="fixed right-6 top-6 z-20"
       aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
     >
       {theme === "dark" ? "Light mode" : "Dark mode"}
-    </button>
+    </Button>
   );
 }
