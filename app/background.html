@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thread Background</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1a1a; }
+  canvas { display: block; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+let W, H;
+let mouse = { x: -9999, y: -9999 };
+let hoverStrength = 0, hoverTarget = 0;
+let lastMove = 0;
+let t = 0;
+
+const FIELD_RES = 10;
+let fieldCols, fieldRows;
+let flowField;
+
+const NUM_THREADS = 20000;
+
+let tx, ty, tlen, tspeed, talpha, twidth;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  fieldCols = Math.ceil(W / FIELD_RES) + 2;
+  fieldRows = Math.ceil(H / FIELD_RES) + 2;
+  flowField = new Float32Array(fieldCols * fieldRows);
+  initThreads();
+}
+
+function initThreads() {
+  tx     = new Float32Array(NUM_THREADS);
+  ty     = new Float32Array(NUM_THREADS);
+  tlen   = new Float32Array(NUM_THREADS);
+  tspeed = new Float32Array(NUM_THREADS);
+  talpha = new Float32Array(NUM_THREADS);
+  twidth = new Float32Array(NUM_THREADS);
+
+  for (let i = 0; i < NUM_THREADS; i++) {
+    tx[i]     = Math.random() * W;
+    ty[i]     = Math.random() * H;
+    tlen[i]   = 8 + Math.random() * 55;
+    tspeed[i] = 0.06 + Math.random() * 0.12;
+    talpha[i] = 0.035 + Math.random() * 0.11;
+    twidth[i] = 0.2 + Math.random() * 0.55;
+  }
+}
+
+function noise(x, y, tv) {
+  const s = 0.0025;
+  return (
+    Math.sin(x * s * 1.0 + tv * 0.25 + Math.cos(y * s * 0.6 + tv * 0.1)) +
+    Math.sin(y * s * 1.4 - tv * 0.18 + Math.sin(x * s * 0.4 + tv * 0.07)) * 0.6 +
+    Math.cos((x - y) * s * 0.9 + tv * 0.13) * 0.4
+  ) / 2.0;
+}
+
+function updateFlowField(tv) {
+  for (let row = 0; row < fieldRows; row++) {
+    const y = row * FIELD_RES;
+    for (let col = 0; col < fieldCols; col++) {
+      const x = col * FIELD_RES;
+      flowField[row * fieldCols + col] = noise(x, y, tv) * Math.PI * 2.5;
+    }
+  }
+}
+
+function getAngle(x, y) {
+  const col = (x / FIELD_RES) | 0;
+  const row = (y / FIELD_RES) | 0;
+  if (col < 0 || col >= fieldCols || row < 0 || row >= fieldRows) return 0;
+  return flowField[row * fieldCols + col];
+}
+
+let lastTime = 0;
+
+function animate(ts) {
+  requestAnimationFrame(animate);
+
+  const dt = Math.min(ts - lastTime, 32);
+  lastTime = ts;
+  t += dt * 0.001;
+
+  if (performance.now() - lastMove > 1800) hoverTarget = 0;
+  hoverStrength += (hoverTarget - hoverStrength) * 0.045;
+
+  updateFlowField(t);
+
+  ctx.fillStyle = 'rgba(26,26,26,0.45)';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.lineCap = 'round';
+
+  const mx = mouse.x, my = mouse.y;
+  const hov = hoverStrength;
+  const MOUSE_R = 250;
+  const MOUSE_R2 = MOUSE_R * MOUSE_R;
+
+  for (let i = 0; i < NUM_THREADS; i++) {
+    let x = tx[i];
+    let y = ty[i];
+
+    let angle = getAngle(x, y);
+
+    const ddx = x - mx;
+    const ddy = y - my;
+    const dist2 = ddx * ddx + ddy * ddy;
+    let inf = 0;
+    if (dist2 < MOUSE_R2 && hov > 0.01) {
+      inf = (1 - Math.sqrt(dist2) / MOUSE_R) * hov;
+      const mAngle = Math.atan2(ddy, ddx) + 1.5708; 
+      angle = angle + (mAngle - angle) * inf * 0.85;
+    }
+
+    const speed = tspeed[i] * (1 + hov * 4) * dt * 0.05;
+    tx[i] = x + Math.cos(angle) * speed;
+    ty[i] = y + Math.sin(angle) * speed;
+
+    if (tx[i] < -5)      tx[i] = W + 5;
+    else if (tx[i] > W + 5) tx[i] = -5;
+    if (ty[i] < -5)      ty[i] = H + 5;
+    else if (ty[i] > H + 5) ty[i] = -5;
+
+    const hl = tlen[i] * 0.5 * (1 + inf * 1.2);
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+
+    const a = talpha[i] * (0.55 + inf * 1.45);
+
+    ctx.beginPath();
+    ctx.moveTo(x - cos * hl, y - sin * hl);
+    ctx.lineTo(x + cos * hl, y + sin * hl);
+    ctx.strokeStyle = `rgba(205,205,205,${a.toFixed(2)})`;
+    ctx.lineWidth = twidth[i];
+    ctx.stroke();
+  }
+}
+
+window.addEventListener('mousemove', e => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+  hoverTarget = 1;
+  lastMove = performance.now();
+});
+window.addEventListener('mouseleave', () => { hoverTarget = 0; });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  mouse.x = e.touches[0].clientX;
+  mouse.y = e.touches[0].clientY;
+  hoverTarget = 1;
+  lastMove = performance.now();
+}, { passive: false });
+canvas.addEventListener('touchend', () => { hoverTarget = 0; });
+
+window.addEventListener('resize', resize);
+resize();
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
