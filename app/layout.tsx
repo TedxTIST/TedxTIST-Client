@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "TedxTIST",
-  description: "TedxTIST Season 2 webpage",
+  description: "TedxTIST Edition 2",
 };
 
 export default function RootLayout({

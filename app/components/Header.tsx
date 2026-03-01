@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Button from "./Button";
 
 const navLinks = [
@@ -16,9 +17,13 @@ export default function Header() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
         {/* Logo */}
         <a href="#home" className="flex items-center gap-2">
-          <span className="text-xl font-bold tracking-tight text-white">
-            TEDx<span className="text-red-600">TIST</span>
-          </span>
+          <Image
+            src="/logo-white 4.png"
+            alt="TEDxTIST Logo"
+            width={160}
+            height={40}
+            priority
+          />
         </a>
 
         {/* Navigation */}
