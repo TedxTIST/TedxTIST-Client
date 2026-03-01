@@ -11,16 +11,16 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const base =
-  "relative overflow-hidden rounded-full px-5 py-2 text-sm font-semibold tracking-wide text-white backdrop-blur transition-shadow duration-300 cursor-pointer border";
+  "relative overflow-hidden rounded-full px-5 py-2 text-sm font-semibold tracking-wide text-white backdrop-blur transition-colors duration-300 cursor-pointer";
 
 const idle =
-  "bg-black/80 border-transparent shadow-[0_4px_12px_rgba(220,38,38,0.35)]";
+  "bg-gradient-to-r from-gray-700 to-black";
 
 const hovered =
-  "shadow-[0_4px_18px_rgba(220,38,38,0.55)]";
+  "";
 
 const selectedClass =
-  "bg-red-700 border-red-500/40 shadow-[0_4px_18px_rgba(220,38,38,0.55)]";
+  "bg-gradient-to-r from-gray-700 to-black";
 
 export default function Button({
   className,
@@ -73,6 +73,19 @@ export default function Button({
       onMouseLeave={handleMouseLeave}
       {...props}
     >
+      {/* Gradient border (crimson → purple) */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-0 rounded-full"
+        style={{
+          background: "linear-gradient(to right, #dc2626, #9333ea)",
+          WebkitMask:
+            "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+          WebkitMaskComposite: "xor",
+          maskComposite: "exclude",
+          padding: "1px",
+        }}
+      />
       {/* Radial crimson glow that follows the cursor */}
       {isHovered && !isSelected && (
         <span
