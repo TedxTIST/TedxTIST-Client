@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState, type ButtonHTMLAttributes } from "react";
+import { useCallback, useEffect, useRef, useState, type ButtonHTMLAttributes } from "react";
 import { twMerge } from "tailwind-merge";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -33,8 +33,17 @@ export default function Button({
   ...props
 }: ButtonProps) {
   const btnRef = useRef<HTMLButtonElement>(null);
+  const borderRef = useRef<HTMLSpanElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
+
+  // Sync the border span's border-radius with the button's computed radius
+  useEffect(() => {
+    if (btnRef.current && borderRef.current) {
+      const radius = getComputedStyle(btnRef.current).borderRadius;
+      borderRef.current.style.borderRadius = radius;
+    }
+  }, [className]);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -75,8 +84,9 @@ export default function Button({
     >
       {/* Gradient border (crimson → purple) */}
       <span
+        ref={borderRef}
         aria-hidden
-        className="pointer-events-none absolute inset-0 z-0 rounded-full"
+        className="pointer-events-none absolute inset-0 z-0 rounded-[inherit]"
         style={{
           background: "linear-gradient(to right, #dc2626, #9333ea)",
           WebkitMask:

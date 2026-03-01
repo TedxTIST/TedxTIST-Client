@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Allura, Geist, Geist_Mono } from "next/font/google";
 import FluidCursorBackground from "./components/FluidCursorBackground";
 import Header from "./components/Header";
 import ThemeToggle from "./components/ThemeToggle";
@@ -12,6 +12,12 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+const allura = Allura({
+  variable: "--font-allura",
+  weight: "400",
   subsets: ["latin"],
 });
 
@@ -28,7 +34,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased relative`}
+        className={`${geistSans.variable} ${geistMono.variable} ${allura.variable} antialiased relative`}
       >
         <FluidCursorBackground />
         <Header />
