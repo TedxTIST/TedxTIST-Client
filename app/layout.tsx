@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Allura, Geist, Geist_Mono } from "next/font/google";
 import FluidCursorBackground from "./components/FluidCursorBackground";
+import Image from "next/image";
 import Header from "./components/Header";
 import ThemeToggle from "./components/ThemeToggle";
 import "./globals.css";
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -36,6 +36,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${allura.variable} antialiased relative`}
       >
+        {/* <Image src="/BG threads.jpg" alt="Background" fill className="fixed inset-0 -z-10 object-cover" /> */}
         <FluidCursorBackground />
         <Header />
         <ThemeToggle />

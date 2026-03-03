@@ -19,7 +19,7 @@ export default function Home() {
           </h1>
 
           <p className="mt-4 text-base text-white/60 sm:text-lg">
-            Ideas worth spreading - Ted X TIST 2026
+            Ideas worth spreading - TEDxTIST Edition 2
           </p>
 
           {/* CTA Buttons */}
@@ -113,6 +113,45 @@ export default function Home() {
         </div>
       </section>
 
+      {/* About Section */}
+      <section
+        id="about"
+        className="relative flex min-h-screen items-center overflow-hidden px-6 md:px-16 lg:px-24"
+      >
+        {/* Text Content — Left */}
+        <div className="z-10 flex w-full flex-col w-[35%] items-start text-left max-w-xl">
+          <h2 className="text-5xl font-bold leading-tight text-red-600 sm:text-6xl lg:text-7xl">
+            About
+          </h2>
+          <p className="mt-6 text-base leading-relaxed text-white/80 sm:text-lg lg:text-xl">
+            Lorem Ipsum is simply dummy text of the printing and typesetting
+            industry. Lorem Ipsum has been the industry&apos;s standard dummy
+            text ever since the 1500s, when an unknown printer took a galley of
+            type and scrambled it to make a type specimen book. It has survived
+            not only five centuries, but also the leap into electronic
+            typesetting, remaining essentially unchanged.
+          </p>
+        </div>
+
+        {/* Image — Right */}
+        <div className="absolute bottom-0 right-0 w-[70%]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/TIST-main-block.png"
+            alt="TIST Campus"
+            className="h-full w-full object-cover object-bottom grayscale"
+          />
+          {/* Gradient overlay so text stays readable */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(ellipse at 0% 50%, black 0%, rgba(0, 0, 0, 0.55) 10%, rgba(0,0,0,0.2) 30%, transparent 60%)",
+            }}
+          />
+        </div>
+      </section>
+
       {/* Speakers Section */}
       <section
         id="speakers"
@@ -122,30 +161,30 @@ export default function Home() {
         <p className="mt-4 max-w-lg text-white/50">Coming soon.</p>
       </section>
 
-      {/* About Section */}
+      {/* Tickets Section */}
       <section
-        id="about"
+        id="tickets"
         className="flex min-h-screen flex-col items-center justify-center px-6 text-center"
       >
-        <h2 className="text-4xl font-bold text-white">About</h2>
+        <h2 className="text-4xl font-bold text-white">Tickets</h2>
         <p className="mt-4 max-w-lg text-white/50">Coming soon.</p>
       </section>
 
-      {/* Gallery Section */}
+      {/* Sponsors Section */}
       <section
-        id="gallery"
+        id="sponsors"
         className="flex min-h-screen flex-col items-center justify-center px-6 text-center"
       >
-        <h2 className="text-4xl font-bold text-white">Gallery</h2>
+        <h2 className="text-4xl font-bold text-white">Sponsors</h2>
         <p className="mt-4 max-w-lg text-white/50">Coming soon.</p>
       </section>
 
-      {/* Contact Section */}
+      {/* Us Section */}
       <section
-        id="contact"
+        id="us"
         className="flex min-h-screen flex-col items-center justify-center px-6 text-center"
       >
-        <h2 className="text-4xl font-bold text-white">Contact</h2>
+        <h2 className="text-4xl font-bold text-white">Us</h2>
         <p className="mt-4 max-w-lg text-white/50">Coming soon.</p>
       </section>
     </>
