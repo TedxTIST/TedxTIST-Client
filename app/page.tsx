@@ -116,10 +116,10 @@ export default function Home() {
       {/* About Section */}
       <section
         id="about"
-        className="relative flex min-h-screen items-center overflow-hidden px-6 md:px-16 lg:px-24"
+        className="relative flex min-h-screen flex-col md:flex-row items-center overflow-hidden md:px-16 lg:px-24"
       >
         {/* Text Content — Left */}
-        <div className="z-10 flex w-full flex-col w-[35%] items-start text-left max-w-xl">
+        <div className="z-10 flex w-full flex-col md:w-[35%] items-start text-left max-w-xl px-6 md:px-0 pt-24 md:pt-0">
           <h2 className="text-5xl font-bold leading-tight text-red-600 sm:text-6xl lg:text-7xl">
             About
           </h2>
@@ -133,17 +133,17 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Image — Right */}
-        <div className="absolute bottom-0 right-0 w-[70%]">
+        {/* Image — full width on mobile, right-aligned on desktop */}
+        <div className="relative w-full mt-auto md:mt-0 md:absolute md:bottom-0 md:right-0 md:w-[70%]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/TIST-main-block.png"
             alt="TIST Campus"
             className="h-full w-full object-cover object-bottom grayscale"
           />
-          {/* Gradient overlay so text stays readable */}
+          {/* Gradient overlay — hidden on mobile, visible on desktop */}
           <div
-            className="absolute inset-0"
+            className="absolute inset-0 hidden md:block"
             style={{
               background:
                 "radial-gradient(ellipse at 0% 50%, black 0%, rgba(0, 0, 0, 0.55) 10%, rgba(0,0,0,0.2) 30%, transparent 60%)",
