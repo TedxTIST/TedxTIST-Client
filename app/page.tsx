@@ -1,6 +1,7 @@
 "use client";
 
 import Button from "./components/Button";
+import SpeakerSection from "./components/SpeakerSection";
 
 export default function Home() {
   return (
@@ -153,13 +154,7 @@ export default function Home() {
       </section>
 
       {/* Speakers Section */}
-      <section
-        id="speakers"
-        className="flex min-h-screen flex-col items-center justify-center px-6 text-center"
-      >
-        <h2 className="text-4xl font-bold text-white">Speakers</h2>
-        <p className="mt-4 max-w-lg text-white/50">Coming soon.</p>
-      </section>
+      <SpeakerSection />
 
       {/* Tickets Section */}
       <section
