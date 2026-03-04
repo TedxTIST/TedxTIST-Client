@@ -1,25 +1,70 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
-function SpeakerImage({ src, alt }: { src: string; alt: string }) {
+function getMobileSrc(src: string): string {
+  // /speakers/aksomaniac.png → /speakers/compressed-mobile/aksomaniac-mobile.webp
+  const match = src.match(/^\/speakers\/(.+)\.png$/);
+  if (!match) return src;
+  return `/speakers/compressed-mobile/${match[1]}-mobile.webp`;
+}
+
+// Preload cache — ensures each image is fetched only once
+const preloadedImages = new Set<string>();
+const isMobileQuery = typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)") : null;
+
+function isSlowNetwork(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const conn = (navigator as Navigator & { connection?: { effectiveType?: string; saveData?: boolean } }).connection;
+  if (!conn) return false;
+  // Treat 2g, slow-2g, or data-saver mode as slow
+  return conn.saveData === true || conn.effectiveType === "slow-2g" || conn.effectiveType === "2g" || conn.effectiveType === "3g";
+}
+
+function shouldUseWebp(): boolean {
+  return !!(isMobileQuery?.matches) || isSlowNetwork();
+}
+
+function preloadImage(src: string) {
+  // Pick webp on mobile or slow networks, full PNG otherwise
+  const resolvedSrc = shouldUseWebp() ? getMobileSrc(src) : src;
+  if (preloadedImages.has(resolvedSrc)) return;
+  preloadedImages.add(resolvedSrc);
+  const img = new Image();
+  img.src = resolvedSrc;
+}
+
+function SpeakerImage({ src, alt, priority = false }: { src: string; alt: string; priority?: boolean }) {
   const [hasError, setHasError] = useState(false);
+  const [slowNet, setSlowNet] = useState(false);
 
   useEffect(() => {
     setHasError(false);
+    setSlowNet(isSlowNetwork());
   }, [src]);
+
+  const mobileSrc = getMobileSrc(src);
 
   return (
     <>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt={alt}
-        className={`h-full w-full object-cover object-top grayscale ${
-          hasError ? "invisible" : ""
-        }`}
-        onError={() => setHasError(true)}
-      />
+      <picture>
+        {/* Always serve webp on mobile */}
+        <source media="(max-width: 767px)" srcSet={mobileSrc} type="image/webp" />
+        {/* Also serve webp on desktop when network is slow */}
+        {slowNet && <source srcSet={mobileSrc} type="image/webp" />}
+        <img
+          src={slowNet ? mobileSrc : src}
+          alt={alt}
+          className={`h-full w-full object-cover object-top grayscale ${
+            hasError ? "invisible" : ""
+          }`}
+          loading={priority ? "eager" : "lazy"}
+          decoding="async"
+          fetchPriority={priority ? "high" : "low"}
+          onError={() => setHasError(true)}
+        />
+      </picture>
       {hasError && (
         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl">
           <svg
@@ -130,6 +175,21 @@ export default function SpeakerSection() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Prefetch current + next 2 speaker images progressively
+  useEffect(() => {
+    for (let offset = 0; offset <= 2; offset++) {
+      const idx = currentIndex + offset;
+      if (idx < speakers.length) {
+        preloadImage(speakers[idx].image);
+      }
+    }
+  }, [currentIndex]);
+
+  // Eagerly preload first speaker image on mount
+  useEffect(() => {
+    preloadImage(speakers[0].image);
+  }, []);
+
   const speaker = speakers[currentIndex];
 
   // Calculate per-speaker progress (0-1) for the active speaker
@@ -205,28 +265,28 @@ export default function SpeakerSection() {
 
         {/* Speaker Content — crossfade based on scroll */}
         <div
-          className="relative z-10 flex flex-col gap-8 md:flex-row md:items-center md:gap-16"
+          className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:gap-16"
           style={{
             opacity,
             transform: `translateY(${(1 - opacity) * 12}px)`,
             transition: "opacity 0.15s ease-out, transform 0.15s ease-out",
           }}
         >
-          {/* Left: Name + Bio */}
-          <div className="flex flex-col md:w-1/2">
-            <h2 className="font-[family-name:var(--font-allura)] text-4xl leading-tight text-red-600 sm:text-5xl lg:text-7xl">
+          {/* Top on mobile, Left on desktop: Name + Bio */}
+          <div className="order-1 flex flex-col flex-1 min-w-0 md:w-1/2">
+            <h2 className="font-[family-name:var(--font-allura)] text-5xl leading-tight text-red-600 sm:text-5xl lg:text-7xl">
               {speaker.name}
             </h2>
-            <p className="mt-6 max-w-lg text-base leading-relaxed text-white/70 sm:text-lg lg:text-xl">
+            <p className="mt-3 md:mt-6 max-w-lg text-base leading-relaxed text-white/70 sm:text-lg md:text-base lg:text-xl line-clamp-5 md:line-clamp-none">
               {speaker.bio}
             </p>
           </div>
 
-          {/* Right: Speaker Image */}
-          <div className="relative flex items-center justify-center md:w-1/2">
-            <div className="relative h-[350px] w-[300px] sm:h-[450px] sm:w-[380px] lg:h-[550px] lg:w-[450px]">
+          {/* Bottom on mobile, Right on desktop: Speaker Image */}
+          <div className="order-2 relative flex items-center justify-center md:w-1/2">
+            <div className="relative h-[300px] w-[240px] sm:h-[360px] sm:w-[290px] md:h-[350px] md:w-[300px] lg:h-[550px] lg:w-[450px]">
               <div className="absolute inset-0 overflow-hidden rounded-2xl">
-                <SpeakerImage src={speaker.image} alt={speaker.name} />
+                <SpeakerImage src={speaker.image} alt={speaker.name} priority={currentIndex === 0} />
               </div>
               <div
                 className="absolute -bottom-8 left-1/2 -z-10 h-[200px] w-[300px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
@@ -237,7 +297,7 @@ export default function SpeakerSection() {
         </div>
 
         {/* Navigation Indicators */}
-        <div className="relative z-10 mt-12 flex items-center justify-between md:mt-16">
+        <div className="relative z-10 mt-4 flex items-center justify-between md:mt-16">
           {/* Dot indicators — scroll-driven, no click navigation needed */}
           <div className="flex items-center gap-2">
             {speakers.map((_, i) => (
