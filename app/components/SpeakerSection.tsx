@@ -52,14 +52,14 @@ const speakers: Speaker[] = [
     image: "/speakers/aksomaniac.png",
   },
   {
-    name: "Speaker Two",
-    bio: "A visionary entrepreneur who built a multi-million dollar company from scratch. Their journey from a small town to the global stage is a testament to perseverance and innovation in the face of adversity.",
-    image: "/speakers/speaker-2.png",
+    name: "Ajas Mohammed Jansher",
+    bio: "Ajas Mohammed is the Founder and CEO of Eduport, a Kerala-based EdTech startup redefining how students in India experience education. He has positioned Eduport at the forefront of personalized, adaptive learning, ensuring education is no longer one-size-fits-all but tailored to each learner's strengths, struggles, and pace.",
+    image: "/speakers/ajas.png",
   },
   {
-    name: "Speaker Three",
+    name: "Anoop Ambika",
     bio: "An acclaimed researcher in artificial intelligence and ethics, dedicated to ensuring technology serves humanity. Their groundbreaking work bridges the gap between cutting-edge innovation and responsible development.",
-    image: "/speakers/speaker-3.png",
+    image: "/speakers/anoopambika.png",
   },
   {
     name: "Speaker Four",

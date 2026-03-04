@@ -18,6 +18,9 @@ type Thread = {
 	driftY: number;
 	targetOffsetX: number;
 	targetOffsetY: number;
+	/** Initial head position along the stroke — used as idle fallback goal */
+	initX: number;
+	initY: number;
 };
 
 /* 
@@ -73,15 +76,55 @@ export default function FluidCursorBackground() {
 			context.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
 		};
 
-		// Seed threads around center with fixed-length segments.
+		// Seed threads along a curved stroke matching the reference X sweep.
 		const initializeThreads = () => {
 			const { innerWidth, innerHeight } = window;
+
+			// Quadratic bezier: P0 (right entry) → P1 (X convergence) → P2 (left exit).
+			// Threads are bundled tight on the right and fan out toward the bottom-left.
+			const p0x = innerWidth * 1.10,  p0y = innerHeight * 0.38;  // right, ~40% height
+			const p1x = innerWidth * 0.38,  p1y = innerHeight * 0.42;  // X center convergence
+			const p2x = innerWidth * -0.12, p2y = innerHeight * 0.75;  // exit bottom-left
+
+			// Evaluate quadratic bezier at parameter t.
+			const bezier = (t: number) => {
+				const u = 1 - t;
+				return {
+					x: u * u * p0x + 2 * u * t * p1x + t * t * p2x,
+					y: u * u * p0y + 2 * u * t * p1y + t * t * p2y,
+				};
+			};
+			// Tangent (first derivative) at parameter t.
+			const bezierTangent = (t: number) => {
+				const u = 1 - t;
+				return {
+					tx: 2 * u * (p1x - p0x) + 2 * t * (p2x - p1x),
+					ty: 2 * u * (p1y - p0y) + 2 * t * (p2y - p1y),
+				};
+			};
+
 			threadsRef.current = Array.from({ length: THREAD_COUNT }, () => {
-				const angle = Math.random() * Math.PI * 2;
-				const jitter = (Math.random() - 0.5) * 0.6;
-				const driftAngle = angle + jitter;
-				const startX = innerWidth * 0.5 + (Math.random() - 0.5) * 140;
-				const startY = innerHeight * 0.5 + (Math.random() - 0.5) * 140;
+				// t=0 is right (entry), t=1 is left (exit).
+				const t = Math.random();
+				const { x: strokeX, y: strokeY } = bezier(t);
+				const { tx, ty } = bezierTangent(t);
+				const tangentLen = Math.hypot(tx, ty) || 1;
+
+				// Perpendicular to the curve at this point.
+				const perpX = -ty / tangentLen;
+				const perpY = tx / tangentLen;
+
+				// Spread widens from right→left: tight at t≈0, wide at t≈1.
+				const spreadRadius = 20 + t * t * 200;
+				const spread = (Math.random() - 0.5) * spreadRadius;
+				const startX = strokeX + perpX * spread;
+				const startY = strokeY + perpY * spread;
+
+				// Local stroke angle for segment layout & drift.
+				const localAngle = Math.atan2(ty, tx);
+				const jitter = (Math.random() - 0.5) * 0.4;
+				const driftAngle = localAngle + jitter;
+
 				const segmentCount =
 					MIN_SEGMENTS + Math.floor(Math.random() * (SEGMENT_COUNT - MIN_SEGMENTS + 1));
 				const points: ThreadPoint[] = [];
@@ -89,10 +132,11 @@ export default function FluidCursorBackground() {
 				const offsetRadius = Math.random() * BUNDLE_RADIUS;
 				const offsetTheta = Math.random() * Math.PI * 2;
 
+				// Lay segments trailing in the opposite direction of the tangent.
 				for (let i = 0; i < segmentCount; i += 1) {
 					points.push({
-						x: startX - Math.cos(angle) * i * SEGMENT_LENGTH,
-						y: startY - Math.sin(angle) * i * SEGMENT_LENGTH,
+						x: startX - Math.cos(localAngle) * i * SEGMENT_LENGTH,
+						y: startY - Math.sin(localAngle) * i * SEGMENT_LENGTH,
 						vx: 0,
 						vy: 0,
 					});
@@ -106,6 +150,8 @@ export default function FluidCursorBackground() {
 					driftY: Math.sin(driftAngle),
 					targetOffsetX: Math.cos(offsetTheta) * offsetRadius,
 					targetOffsetY: Math.sin(offsetTheta) * offsetRadius,
+					initX: startX,
+					initY: startY,
 				};
 			});
 		};
@@ -180,12 +226,12 @@ export default function FluidCursorBackground() {
 
 			const { x: targetX, y: targetY, active } = cursorRef.current;
 			const { innerWidth, innerHeight } = window;
-			const fallbackX = innerWidth * 0.5;
-			const fallbackY = innerHeight * 0.5;
-			const baseGoalX = active ? targetX : fallbackX;
-			const baseGoalY = active ? targetY : fallbackY;
 
 			// --- NEW: CALCULATE SPEED AND DYNAMIC SPREAD ---
+			// Use cursor position for speed tracking only when active.
+			const baseGoalX = active ? targetX : prevCursorX;
+			const baseGoalY = active ? targetY : prevCursorY;
+
 			const cursorDx = baseGoalX - prevCursorX;
 			const cursorDy = baseGoalY - prevCursorY;
 			const currentSpeed = Math.hypot(cursorDx, cursorDy);
@@ -210,10 +256,12 @@ export default function FluidCursorBackground() {
 				const thread = threadsRef.current[threadIdx];
 				const head = thread.points[0];
 
-				// UPDATED: Scale the offset by the dynamic spreadFactor
-				// When moving fast, spreadFactor approaches 0, pinching the bundle.
-				const threadGoalX = baseGoalX + thread.targetOffsetX * spreadFactor;
-				const threadGoalY = baseGoalY + thread.targetOffsetY * spreadFactor;
+				// When cursor is active, threads converge on cursor + spread offset.
+				// When idle, each thread returns to its own stroke-position (initX/initY).
+				const goalX = active ? baseGoalX + thread.targetOffsetX * spreadFactor : thread.initX;
+				const goalY = active ? baseGoalY + thread.targetOffsetY * spreadFactor : thread.initY;
+				const threadGoalX = goalX;
+				const threadGoalY = goalY;
 
 				// Move head toward its unique target with minimal elasticity.
 				const dx = threadGoalX - head.x;
