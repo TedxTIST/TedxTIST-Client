@@ -2,6 +2,43 @@
 
 import { useState, useEffect, useRef } from "react";
 
+function SpeakerImage({ src, alt }: { src: string; alt: string }) {
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setHasError(false);
+  }, [src]);
+
+  return (
+    <>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        className={`h-full w-full object-cover object-top ${
+          hasError ? "invisible" : ""
+        }`}
+        onError={() => setHasError(true)}
+      />
+      {hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl">
+          <svg
+            width="120"
+            height="120"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="rgba(255,255,255,0.2)"
+            strokeWidth="1"
+          >
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </div>
+      )}
+    </>
+  );
+}
+
 interface Speaker {
   name: string;
   bio: string;
@@ -12,7 +49,7 @@ const speakers: Speaker[] = [
   {
     name: "Aron Kollassani Selestin",
     bio: "Aron (Aksomaniac) is a Malayalam R&B artist from Thiruvananthapuram, known for shaping the genre almost single-handedly. A trained Western classical pianist, he pivoted during the pandemic—dropping out of engineering to pursue music full-time from his bedroom studio.",
-    image: "/speakers/speaker-1.png",
+    image: "/speakers/aksomaniac.png",
   },
   {
     name: "Speaker Two",
@@ -189,29 +226,7 @@ export default function SpeakerSection() {
           <div className="relative flex items-center justify-center md:w-1/2">
             <div className="relative h-[350px] w-[300px] sm:h-[450px] sm:w-[380px] lg:h-[550px] lg:w-[450px]">
               <div className="absolute inset-0 overflow-hidden rounded-2xl">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={speaker.image}
-                  alt={speaker.name}
-                  className="h-full w-full object-cover object-top"
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    target.style.display = "none";
-                    const parent = target.parentElement;
-                    if (parent && !parent.querySelector(".placeholder-fallback")) {
-                      const placeholder = document.createElement("div");
-                      placeholder.className =
-                        "placeholder-fallback absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl";
-                      placeholder.innerHTML = `
-                        <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                          <circle cx="12" cy="7" r="4"/>
-                        </svg>
-                      `;
-                      parent.appendChild(placeholder);
-                    }
-                  }}
-                />
+                <SpeakerImage src={speaker.image} alt={speaker.name} />
               </div>
               <div
                 className="absolute -bottom-8 left-1/2 -z-10 h-[200px] w-[300px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
