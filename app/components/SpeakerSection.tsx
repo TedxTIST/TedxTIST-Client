@@ -15,7 +15,7 @@ function SpeakerImage({ src, alt }: { src: string; alt: string }) {
       <img
         src={src}
         alt={alt}
-        className={`h-full w-full object-cover object-top ${
+        className={`h-full w-full object-cover object-top grayscale ${
           hasError ? "invisible" : ""
         }`}
         onError={() => setHasError(true)}
@@ -58,43 +58,43 @@ const speakers: Speaker[] = [
   },
   {
     name: "Anoop Ambika",
-    bio: "An acclaimed researcher in artificial intelligence and ethics, dedicated to ensuring technology serves humanity. Their groundbreaking work bridges the gap between cutting-edge innovation and responsible development.",
+    bio: " Anoop Ambika is the CEO of the Kerala Startup Mission (KSUM), the state's nodal agency for entrepreneurship. He is a rare \"Practitioner-Leader\", a bureaucrat who was first a serial entrepreneur (founding companies like Genpro Research) and an engineer with a background in Computational Biology and AI. He took charge during the global \"Funding Winter\" and has successfully steered Kerala's startup ecosystem toward stability and maturity",
     image: "/speakers/anoopambika.png",
   },
   {
-    name: "Speaker Four",
-    bio: "A celebrated filmmaker and storyteller whose documentaries have shed light on underrepresented communities. Their lens captures the raw beauty and resilience of the human spirit across cultures.",
-    image: "/speakers/speaker-4.png",
+    name: "Nasima Nasir",
+    bio: "Nasmina Nasir is a social entrepreneur, educator, and community leader reshaping the developmental narrative of Kerala's coastal belt. As the Founder and Director of the iLAB Innovation Laboratory Society, established in 2016, she has built a structured grassroots model to address systemic inequalities affecting fishing communities in Kozhikode.",
+    image: "/speakers/nasima.png",
   },
   {
-    name: "Speaker Five",
-    bio: "A climate activist and environmental scientist working at the intersection of policy and grassroots action. Their tireless advocacy has influenced landmark legislation and inspired a generation of changemakers.",
-    image: "/speakers/speaker-5.png",
+    name: "Vinu Peter",
+    bio: "As Director — DBiz India, Vinu leads the company's India operations with a focus on strategy, growth, and delivery excellence. He plays a pivotal role in expanding DBiz.ai's footprint in India - strengthening capabilities, driving business performance, and ensuring alignment with the company's global vision. As Chief of People & Culture, he also leads global talent and culture initiatives that keep DBiz.ai's growth anchored in its people-first values.",
+    image: "/speakers/vinupeter.png",
   },
   {
-    name: "Speaker Six",
-    bio: "A neuroscientist exploring the frontiers of human consciousness and mental health. Their research into mindfulness and cognitive resilience has transformed therapeutic approaches worldwide.",
-    image: "/speakers/speaker-6.png",
+    name: "Zarin Shihab",
+    bio: "Born into an Indian Air Force family and raised across cities as diverse as Assam, Karnataka, Tamil Nadu, and Uttar Pradesh, Zarin grew up learning how to adapt to languages, cultures, classrooms, and constant movement. Though her roots trace back to Kerala, Hindi became her primary language of literacy, shaping her identity that was deeply cosmopolitan long before she stepped onto a film set.",
+    image: "/speakers/zarin-1.png",
   },
   {
-    name: "Speaker Seven",
-    bio: "A social entrepreneur revolutionizing education in rural communities through technology. Their innovative platform has brought quality learning to thousands of students who previously had no access.",
-    image: "/speakers/speaker-7.png",
+    name: "Arjun Radhakrishnan",
+    bio: "Born in Nagercoil to a Tamil-Malayali household and raised in Pune, his identity was never singular. He grew up navigating languages, cultures, and perspectives: Tamil at home, Marathi in the streets, English in classrooms, Malayalam in heritage. This layered upbringing would later become one of his greatest artistic strengths. In a cinematic landscape divided by region and accent, Arjun moves fluidly across geographies, not by imitation, but by lived experience.",
+    image: "/speakers/arjun.png",
   },
   {
-    name: "Speaker Eight",
-    bio: "An Olympic athlete turned motivational coach who inspires people to push beyond their limits. Their story of overcoming career-threatening injuries is a powerful narrative of grit and determination.",
-    image: "/speakers/speaker-8.png",
+    name: "Jithin A Shaji",
+    bio: "Jithin A. Shaji is a seasoned Planning and Project Controls Manager with over 15 years of experience leading iconic, large-scale infrastructure projects across the UK, UAE, and Bahrain. Currently at Vinci Construction, he specializes in delivering high-stakes techno-commercial excellence for major developments, including the Etihad Rail network.",
+    image: "/speakers/jithin.png",
   },
   {
-    name: "Speaker Nine",
-    bio: "A pioneering architect designing sustainable cities of the future. Their biomimicry-inspired structures have won international awards and are redefining how we think about urban living.",
-    image: "/speakers/speaker-9.png",
+    name: "Mridul George",
+    bio: "Born and raised in Muvattupuzha, Kerala, Mridul George followed a path familiar to many, an engineering education, followed by over a decade in the IT industry. Yet alongside spreadsheets, code, and corporate deadlines, another life was taking shape. From school and college days onward, he was a storyteller, writing, anchoring television programs, and learning early what it meant to speak to an audience. This duality would later define his work: creativity tempered by discipline, emotion structured by intent.",
+    image: "/speakers/mridul.png",
   },
   {
-    name: "Speaker Ten",
-    bio: "A bestselling author and philosopher exploring the meaning of purpose in the modern world. Their books have sparked global conversations about finding clarity amidst the chaos of contemporary life.",
-    image: "/speakers/speaker-10.png",
+    name: "Ritwik Aravindakshan",
+    bio: "An Associate Professor of Mechanical Engineering at the Toc H Institute of Science and Technology (TIST), Dr. Aravindakshan operates at the intersections where disciplines meet and boundaries dissolve. His research journey moves fluidly from the microscopic surfaces of biomedical implants to the vast, interconnected challenges of megaproject infrastructure, revealing how the same principles of balance, foresight, and responsibility apply at every scale.",
+    image: "/speakers/ritwik.png",
   },
 ];
 
