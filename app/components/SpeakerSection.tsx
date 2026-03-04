@@ -236,33 +236,6 @@ export default function SpeakerSection() {
           />
         </div>
 
-        {/* Microphone illustration accent */}
-        <div className="pointer-events-none absolute top-16 right-16 hidden opacity-40 md:block lg:right-32 lg:top-24">
-          <svg
-            width="120"
-            height="140"
-            viewBox="0 0 120 140"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="rotate-12"
-          >
-            <ellipse cx="60" cy="35" rx="22" ry="30" stroke="#dc2626" strokeWidth="2" />
-            <line x1="60" y1="65" x2="60" y2="110" stroke="#dc2626" strokeWidth="2" />
-            <path d="M40 110 Q60 125 80 110" stroke="#dc2626" strokeWidth="2" fill="none" />
-            <path
-              d="M60 110 Q55 130 50 135"
-              stroke="#dc2626"
-              strokeWidth="1.5"
-              fill="none"
-              strokeDasharray="4 3"
-            />
-            <line x1="45" y1="22" x2="75" y2="22" stroke="#dc2626" strokeWidth="0.5" opacity="0.5" />
-            <line x1="43" y1="30" x2="77" y2="30" stroke="#dc2626" strokeWidth="0.5" opacity="0.5" />
-            <line x1="43" y1="38" x2="77" y2="38" stroke="#dc2626" strokeWidth="0.5" opacity="0.5" />
-            <line x1="45" y1="46" x2="75" y2="46" stroke="#dc2626" strokeWidth="0.5" opacity="0.5" />
-          </svg>
-        </div>
-
         {/* Speaker Content — crossfade based on scroll */}
         <div
           className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:gap-16"
