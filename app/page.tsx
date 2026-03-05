@@ -2,6 +2,7 @@
 
 import Button from "./components/Button";
 import Carousel from "./components/Carousel";
+import SpeakerSection from "./components/SpeakerSection";
 
 export default function Home() {
   return (
@@ -11,6 +12,16 @@ export default function Home() {
         id="home"
         className="relative flex min-h-screen items-center justify-end px-6 md:px-16 lg:px-24"
       >
+        {/* X image — left side*/}
+        {/* <div className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 w-[55%] md:w-[100%] select-none">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {/* <img
+            src="/X.png"
+            alt=""
+            className="w-full object-contain"
+          />
+        </div> */ }
+
         {/* Hero Content — positioned right */}
         <div className="z-10 flex flex-col items-start text-left max-w-xl">
           <h1 className="text-5xl font-bold leading-tight tracking-tight text-white sm:text-7xl lg:text-8xl">
@@ -154,13 +165,7 @@ export default function Home() {
       </section>
 
       {/* Speakers Section */}
-      <section
-        id="speakers"
-        className="flex min-h-screen flex-col items-center justify-center px-6 text-center"
-      >
-        <h2 className="text-4xl font-bold text-white">Speakers</h2>
-        <p className="mt-4 max-w-lg text-white/50">Coming soon.</p>
-      </section>
+      <SpeakerSection />
 
       {/* Tickets Section */}
       <section
