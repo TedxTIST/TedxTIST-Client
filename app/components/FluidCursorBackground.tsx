@@ -23,6 +23,12 @@ type Thread = {
 	initY: number;
 };
 
+declare global {
+	interface Window {
+		setFps?: (value: number) => void;
+	}
+}
+
 /* 
 the following parameters were tuned through trial and error to achieve a visually pleasing balance of responsiveness, fluidity, and thread separation. Adjusting these values will significantly change the behavior and appearance of the cursor trails:
 
@@ -58,6 +64,8 @@ export default function FluidCursorBackground() {
 	const lastMoveRef = useRef({ x: 0, y: 0, time: 0 });
 
 	useEffect(() => {
+		window.setFps ??= () => {};
+
 		// Acquire canvas + context once; bail early if unavailable.
 		const canvas = canvasRef.current;
 		if (!canvas) return;
