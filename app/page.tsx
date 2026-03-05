@@ -1,6 +1,7 @@
 "use client";
 
 import Button from "./components/Button";
+import Carousel from "./components/Carousel";
 
 export default function Home() {
   return (
@@ -185,7 +186,7 @@ export default function Home() {
         className="flex min-h-screen flex-col items-center justify-center px-6 text-center"
       >
         <h2 className="text-4xl font-bold text-white">Us</h2>
-        <p className="mt-4 max-w-lg text-white/50">Coming soon.</p>
+        <Carousel />
       </section>
     </>
   );
