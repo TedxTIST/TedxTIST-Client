@@ -8,8 +8,6 @@ type Slide = {
   role: string;
 };
 
-const navItems = ["Home", "About", "Speakers", "Tickets", "Sponsors", "Us"];
-
 const slides: Slide[] = [
   { id: "1", name: "Ganga Gireesh", role: "Design Lead" },
   { id: "2", name: "Aadhil Rahman", role: "Creative Director" },
@@ -26,6 +24,10 @@ export default function Carousel() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const targetPositionRef = useRef(0);
   const rafRef = useRef<number | null>(null);
+  const overscrollCountRef = useRef(0);
+  const overscrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const OVERSCROLL_THRESHOLD = 8;
 
   const trackStep = CARD_WIDTH + CARD_GAP;
   const roundedPosition = Math.round(displayPosition);
@@ -68,11 +70,35 @@ export default function Carousel() {
 
   const handleWheel = useCallback(
     (event: WheelEvent) => {
-      event.preventDefault();
+      // Only trap scroll on desktop
+      if (window.innerWidth < 768) return;
 
       const delta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
+      const currentTarget = targetPositionRef.current;
+      const atStart = currentTarget <= 0.01 && delta < 0;
+      const atEnd = currentTarget >= slides.length - 1 - 0.01 && delta > 0;
+
+      if (atStart || atEnd) {
+        overscrollCountRef.current += 1;
+
+        // Reset overscroll counter after a pause in scrolling
+        if (overscrollTimeoutRef.current) clearTimeout(overscrollTimeoutRef.current);
+        overscrollTimeoutRef.current = setTimeout(() => {
+          overscrollCountRef.current = 0;
+        }, 600);
+
+        if (overscrollCountRef.current > OVERSCROLL_THRESHOLD) {
+          // Let page scroll through
+          return;
+        }
+      } else {
+        overscrollCountRef.current = 0;
+      }
+
+      event.preventDefault();
+
       const stepDelta = delta / 180;
-      const newTarget = targetPositionRef.current + stepDelta;
+      const newTarget = currentTarget + stepDelta;
       // Clamp to valid range
       targetPositionRef.current = Math.max(0, Math.min(slides.length - 1, newTarget));
     },
@@ -87,6 +113,7 @@ export default function Carousel() {
 
     return () => {
       element.removeEventListener("wheel", handleWheel);
+      if (overscrollTimeoutRef.current) clearTimeout(overscrollTimeoutRef.current);
     };
   }, [handleWheel]);
 
@@ -111,30 +138,7 @@ export default function Carousel() {
   }, []);
 
   return (
-    <section className="relative mx-auto w-full max-w-[1220px] overflow-hidden bg-black px-6 pb-16 pt-10 text-white md:px-10 md:pt-12">
-      <header className="flex items-center justify-between">
-        <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
-          <span className="font-bold text-red-600">TEDx</span>
-          <span className="ml-1 font-light text-white/90">TIST</span>
-        </h1>
-
-        <nav className="hidden items-center gap-2 md:flex">
-          {navItems.map((item, index) => (
-            <button
-              key={item}
-              type="button"
-              className={`rounded-full border px-4 py-1 text-sm transition-colors ${
-                index === 0
-                  ? "border-red-500/80 bg-red-900/50 text-white"
-                  : "border-red-500/50 bg-zinc-800/65 text-white/80 hover:text-white"
-              }`}
-            >
-              {item}
-            </button>
-          ))}
-        </nav>
-      </header>
-
+    <div className="relative mx-auto w-full max-w-[1220px] overflow-hidden px-6 pb-16 text-white md:px-10">
       <div
         ref={scrollRef}
         className="relative mt-14 h-[430px] overflow-hidden cursor-grab active:cursor-grabbing"
@@ -195,8 +199,7 @@ export default function Carousel() {
           );
         })}
 
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-28 bg-gradient-to-r from-black via-black/85 to-transparent" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-28 bg-gradient-to-l from-black via-black/85 to-transparent" />
+
       </div>
 
       <div className="mt-6 flex items-center justify-center gap-4">
@@ -220,6 +223,6 @@ export default function Carousel() {
           );
         })}
       </div>
-    </section>
+    </div>
   );
 }

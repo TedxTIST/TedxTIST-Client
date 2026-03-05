@@ -190,7 +190,12 @@ export default function Home() {
         id="us"
         className="flex min-h-screen flex-col items-center justify-center px-6 text-center"
       >
-        <h2 className="text-4xl font-bold text-white">Us</h2>
+        <h2 className="mb-4 text-5xl font-bold leading-tight text-red-600 sm:text-6xl lg:text-7xl">
+          The Team
+        </h2>
+        <p className="mb-10 max-w-lg text-base text-white/60 sm:text-lg">
+          The people behind TEDxTIST
+        </p>
         <Carousel />
       </section>
     </>
