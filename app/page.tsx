@@ -188,7 +188,7 @@ export default function Home() {
       {/* Us Section */}
       <section
         id="us"
-        className="flex min-h-screen flex-col items-center justify-center px-6 text-center"
+        className="flex flex-col items-center px-6 pt-24 text-center"
       >
         <h2 className="mb-4 text-5xl font-bold leading-tight text-red-600 sm:text-6xl lg:text-7xl">
           The Team
