@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import FPSCounter from "./FPSCounter";
+import { useEffect, useRef } from "react";
+// import FPSCounter from "./FPSCounter";
 
 type ThreadPoint = {
 	x: number;
@@ -51,7 +51,6 @@ const BUNDLE_RADIUS = 60;
 const SPREAD_SENSITIVITY = 12; // NEW: Tune this to change the pinch responsiveness
 
 export default function FluidCursorBackground() {
-	const [fps, setFps] = useState(0);
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const threadsRef = useRef<Thread[]>([]);
 	const cursorRef = useRef({ x: 0, y: 0, active: false });
@@ -187,9 +186,6 @@ export default function FluidCursorBackground() {
 		let smoothedSpeed = 0;
 		let spreadFactor = 1;
 		let previousFrameTime = performance.now();
-		let fpsAccumulatedTime = 0;
-		let fpsFrameCount = 0;
-		let lastPublishedFps = 0;
 		// -----------------------------------------
 
 		// Render loop: fade previous frame, then draw trailing threads chasing cursor.
@@ -199,22 +195,6 @@ export default function FluidCursorBackground() {
 			const now = performance.now();
 			const frameDelta = now - previousFrameTime;
 			previousFrameTime = now;
-
-			if (frameDelta > 0) {
-				fpsFrameCount += 1;
-				fpsAccumulatedTime += frameDelta;
-
-				if (fpsAccumulatedTime >= 250) {
-					const nextFps = (fpsFrameCount * 1000) / fpsAccumulatedTime;
-					fpsFrameCount = 0;
-					fpsAccumulatedTime = 0;
-
-					if (Math.abs(nextFps - lastPublishedFps) >= 0.5) {
-						lastPublishedFps = nextFps;
-						setFps(nextFps);
-					}
-				}
-			}
 
 			context.globalCompositeOperation = "destination-in";
 			context.fillStyle = "rgba(172, 38, 38, 0)";
@@ -361,7 +341,6 @@ export default function FluidCursorBackground() {
 				className="pointer-events-none fixed inset-0 z-0 h-full w-full"
 				aria-hidden="true"
 			/>
-			<FPSCounter fps={fps} />
 		</>
 	);
 }

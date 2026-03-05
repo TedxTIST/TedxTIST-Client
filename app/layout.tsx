@@ -39,7 +39,6 @@ export default function RootLayout({
         {/* <Image src="/BG threads.jpg" alt="Background" fill className="fixed inset-0 -z-10 object-cover" /> */}
         <FluidCursorBackground />
         <Header />
-        <ThemeToggle />
         <div className="relative z-10">{children}</div>
       </body>
     </html>
