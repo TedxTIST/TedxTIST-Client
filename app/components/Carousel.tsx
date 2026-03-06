@@ -6,31 +6,32 @@ type Slide = {
   id: string;
   name: string;
   role: string;
+  image: string;
 };
 
 const slides: Slide[] = [
-  { id: "1", name: "Ealiyas Shaji", role: "Community Lead TEDxTIST" },
-  { id: "2", name: "John Savio Romy", role: "Co - Lead" },
-  { id: "3", name: "Anirudh K", role: "TEDxTIST 2026 Licensee and Organiser" },
-  { id: "4", name: "Anjali Biju", role: "Lead Supervisor" },
-  { id: "5", name: "Sanjana Vijay", role: "Operations Lead" },
-  { id: "6", name: "Christene Sara John", role: "Operations Lead" },
-  { id: "7", name: "Mary Ann", role: "Venue & Infrastructure Lead (Operations)" },
-  { id: "8", name: "Gayathri J S", role: "Experience & Hospitality Lead (Operations)" },
-  { id: "9", name: "Cyrus Babu", role: "Production and Stage Lead (Operations)" },
-  { id: "10", name: "Aadhil Kassim", role: "Technical Lead" },
-  { id: "11", name: "Aakash Rajeev", role: "Technical Lead" },
-  { id: "12", name: "Leanne George", role: "Documentation & Compliance Lead" },
-  { id: "13", name: "Joyel Sebastian", role: "Social Media Coordinator" },
-  { id: "14", name: "Ganga Gireesh", role: "Design Lead" },
-  { id: "15", name: "Sruthika", role: "Visual Identity & Assets Lead (Design)" },
-  { id: "16", name: "Devi Anjana", role: "Merch and Brand Experience Lead(Design)" },
-  { id: "17", name: "Aswin Philip Raju", role: "Volunteer Coordinator" },
-  { id: "18", name: "Calvin Binu", role: "Volunteer Coordinator" },
-  { id: "19", name: "Ram Uday", role: "Volunteer Coordinator" },
-  { id: "20", name: "Abhishek Sadasivan", role: "Volunteer Coordinator" },
-  { id: "21", name: "Eldho G Blayil", role: "Cluster Lead" },
-  { id: "22", name: "Vignesh Nair", role: "Cluster Lead" },
+  { id: "1", name: "Ealiyas Shaji", role: "Community Lead TEDxTIST", image: "/team/Ealiyas Shaji.jpg" },
+  { id: "2", name: "John Savio Romy", role: "Co - Lead", image: "/team/John Savio Romy.jpg" },
+  { id: "3", name: "Anirudh K", role: "TEDxTIST 2026 Licensee and Organiser", image: "/team/Anirudh K.jpg" },
+  { id: "4", name: "Anjali Biju", role: "Lead Supervisor", image: "/team/Anjali Biju.jpg" },
+  { id: "5", name: "Sanjana Vijay", role: "Operations Lead", image: "/team/Sanjana Vijay.jpg" },
+  { id: "6", name: "Christene Sara John", role: "Operations Lead", image: "/team/Christene Sara John.jpg" },
+  { id: "7", name: "Mary Ann", role: "Venue & Infrastructure Lead (Operations)", image: "/team/Mary Ann.jpg" },
+  { id: "8", name: "Gayathri J S", role: "Experience & Hospitality Lead (Operations)", image: "/team/Gayathri J S.jpeg" }, // Updated to .jpeg
+  { id: "9", name: "Cyrus Babu", role: "Production and Stage Lead (Operations)", image: "/team/Cyrus Babu.jpg" },
+  { id: "10", name: "Aadhil Kassim", role: "Technical Lead", image: "/team/Aadhil Kassim.jpg" },
+  { id: "11", name: "Aakash Rajeev", role: "Technical Lead", image: "/team/Aakash Rajeev.jpg" },
+  { id: "12", name: "Leanne George", role: "Documentation & Compliance Lead", image: "/team/Leanne George.jpg" },
+  { id: "13", name: "Joyel Sebastian", role: "Social Media Coordinator", image: "/team/Joyel Sebastian.heic" }, // Updated to .heic
+  { id: "14", name: "Ganga Gireesh", role: "Design Lead", image: "/team/Ganga Gireesh.heif" }, // Updated to .heif
+  { id: "15", name: "Sruthika", role: "Visual Identity & Assets Lead (Design)", image: "/team/Sruthika.jpg" },
+  { id: "16", name: "Devi Anjana", role: "Merch and Brand Experience Lead(Design)", image: "/team/Devi Anjana.jpg" },
+  { id: "17", name: "Aswin Philip Raju", role: "Volunteer Coordinator", image: "/team/Aswin Philip Raju.jpg" },
+  { id: "18", name: "Calvin Binu", role: "Volunteer Coordinator", image: "/team/Calvin Binu.jpeg" }, // Updated to .jpeg
+  { id: "19", name: "Ram Uday", role: "Volunteer Coordinator", image: "/team/Ram Uday.jpg" },
+  { id: "20", name: "Abhishek Sadasivan", role: "Volunteer Coordinator", image: "/team/Abhishek Sadasivan.jpg" },
+  { id: "21", name: "Eldho G Blayil", role: "Cluster Lead", image: "/team/Eldho G Blayil.jpg" },
+  { id: "22", name: "Vignesh Nair", role: "Cluster Lead", image: "/team/Vignesh Nair.jpeg" }, // Updated to .jpeg
 ];
 
 const SCROLL_DURATION = 200;
@@ -45,18 +46,15 @@ export default function Carousel() {
   // Dynamic responsive dimensions
   const cardWidth = isMobile ? 260 : 312;
   const cardHeight = isMobile ? 325 : 390;
-  const cardGap = isMobile ? 24 : 36; // 24px = gap-6, 36px = gap-9
+  const cardGap = isMobile ? 24 : 36;
   const paddingOffset = cardWidth / 2;
 
-  // Detect screen size on mount and resize
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
     
-    // Set initial value
     handleResize();
-
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -98,7 +96,7 @@ export default function Carousel() {
     };
 
     animationFrameId.current = requestAnimationFrame(animation);
-  }, [cardWidth, cardGap]); // Re-create function if dimensions change
+  }, [cardWidth, cardGap]);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -153,7 +151,7 @@ export default function Carousel() {
     <div className="w-full flex flex-col items-center">
       <div 
         className="relative flex items-center justify-center w-full" 
-        style={{ height: cardHeight + 40 }} // Dynamic container height
+        style={{ height: cardHeight + 40 }}
       >
         
         {/* Scroll Container */}
@@ -164,8 +162,8 @@ export default function Carousel() {
           style={{ 
             scrollbarWidth: "none", 
             msOverflowStyle: "none",
-            gap: `${cardGap}px`, // Dynamic gap
-            paddingLeft: `calc(50% - ${paddingOffset}px)`, // Dynamic padding to perfectly center
+            gap: `${cardGap}px`,
+            paddingLeft: `calc(50% - ${paddingOffset}px)`,
             paddingRight: `calc(50% - ${paddingOffset}px)`
           }}
         >
@@ -178,8 +176,8 @@ export default function Carousel() {
               <div
                 key={slide.id}
                 onClick={() => executeScroll(idx)}
-                style={{ width: cardWidth, height: cardHeight }} // Dynamic card sizing
-                className={`snap-center shrink-0 transition-all duration-200 cursor-pointer rounded-[48px] overflow-hidden relative flex flex-col items-center justify-end border focus:outline-none
+                style={{ width: cardWidth, height: cardHeight }}
+                className={`snap-center shrink-0 transition-all duration-200 cursor-pointer rounded-[48px] overflow-hidden relative flex flex-col items-center border focus:outline-none
                   ${isActive 
                     ? "scale-100 z-20 border-red-700/40 shadow-[0_30px_80px_rgba(220,38,38,0.35)]" 
                     : "scale-85 z-10 border-transparent opacity-60 brightness-50 grayscale hover:opacity-80"
@@ -187,6 +185,7 @@ export default function Carousel() {
                 `}
                 aria-hidden={!isActive}
               >
+                {/* Fallback backgrounds if image fails to load */}
                 <div className={`absolute inset-0 transition-colors duration-200 ${isActive ? 'bg-red-700/70' : 'bg-red-950'}`} />
                 
                 {isActive && (
@@ -196,12 +195,14 @@ export default function Carousel() {
                   </>
                 )}
 
-                {/* Subject Image Placeholder - Scales down slightly on mobile */}
-                <div className={`absolute left-1/2 -translate-x-1/2 rounded-[45%] bg-gradient-to-b from-zinc-400/70 to-zinc-900/85 grayscale mix-blend-overlay ${isMobile ? 'top-10 h-[250px] w-[210px]' : 'top-16 h-[300px] w-[260px]'}`} />
-                <div className="absolute left-[58%] top-[42%] h-24 w-24 rounded-full bg-black/45 blur-sm" />
+                {/* --- UPDATED: Image fills the whole card (Standard Grayscale) --- */}
+                <div 
+                  className="absolute inset-0 bg-cover bg-center grayscale transition-all duration-200"
+                  style={{ backgroundImage: `url("${encodeURI(slide.image)}")` }}
+                />
 
-                {/* Text Overlay */}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-red-900/90 via-red-600/50 to-transparent px-5 pb-7 pt-12">
+                {/* Text Overlay - kept over the image with a gradient scrim for readability */}
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-red-900/90 via-red-600/50 to-transparent px-5 pb-7 pt-12 mt-auto">
                   <p className={`font-bold tracking-tight text-center transition-colors duration-200 ${isActive ? 'text-white' : 'text-white/70'} ${isMobile ? 'text-2xl' : 'text-3xl'}`}>
                     {slide.name}
                   </p>
