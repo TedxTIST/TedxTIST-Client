@@ -136,12 +136,15 @@ export default function Home() {
             About
           </h2>
           <p className="mt-6 text-base leading-relaxed text-white/80 sm:text-lg lg:text-xl">
-            Lorem Ipsum is simply dummy text of the printing and typesetting
-            industry. Lorem Ipsum has been the industry&apos;s standard dummy
-            text ever since the 1500s, when an unknown printer took a galley of
-            type and scrambled it to make a type specimen book. It has survived
-            not only five centuries, but also the leap into electronic
-            typesetting, remaining essentially unchanged.
+            Toc H Institute of Science and Technology (TIST) is a NAAC-accredited engineering
+            and management institution that emphasizes global technological advancements,
+            innovation and holistic student development. Offering a comprehensive range of 
+            B.Tech, M.Tech and MBA programmes, the institute focuses on interdiscilinary collaboration
+            and entrepreneurship to incubate "job creators" rather than just job seekers. TIST is distinguished
+            by its dedicated research wing- The J.C. Bose Center for Research and Advanced Studies-alongside
+            unique initiatives like the TIST School of Education and Leadership and a specialized department
+            of Applied Psychology and Counselling, all designed to foster academic excellence, mental well
+            -being and proactive nation building.
           </p>
         </div>
 
