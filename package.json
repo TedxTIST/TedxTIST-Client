@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node fetch-images.mjs",
+    "build": "next build && node image-helper/fetch-images.mjs",
     "start": "next start",
     "lint": "eslint"
   },
