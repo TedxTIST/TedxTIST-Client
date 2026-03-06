@@ -154,7 +154,7 @@ export default function Carousel() {
     >
       <div className="sticky top-0 flex h-screen items-center justify-center">
         <div className="relative mx-auto w-full max-w-[1220px] overflow-hidden px-6 pb-16 text-white md:px-10">
-          <div className="relative h-[430px] overflow-hidden">
+          <div className="relative h-[430px] flex items-center justify-center overflow-hidden">
         {visibleSlides.map(({ slide, absolute, key }) => {
 
           const offset = absolute - displayPosition;
@@ -162,7 +162,7 @@ export default function Carousel() {
             return null;
           }
 
-          const isActive = offset === 0;
+          const isActive = offset === 0; // Only the centered slide is considered active
           const translateX = offset * trackStep;
           const distance = Math.abs(offset);
           const scale = Math.max(0.76, 1 - distance * 0.11);
@@ -171,7 +171,7 @@ export default function Carousel() {
           return (
             <article
               key={`${slide.id}-${key}`}
-              className="absolute left-1/2 top-0 h-[390px] w-[312px] -translate-x-1/2 overflow-hidden rounded-[28px] border border-red-700/40 bg-red-700/70 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
+              className="absolute left-1/2 top-1/2 h-[390px] w-[312px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[28px] border border-red-700/40 bg-red-700/70 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
               style={{
                 transform: `translateX(calc(-50% + ${translateX}px)) scale(${scale})`,
                 opacity,
