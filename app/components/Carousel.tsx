@@ -11,8 +11,8 @@ type Slide = {
 const slides: Slide[] = [
   { id: "1", name: "Ealiyas Shaji", role: "Community Lead TEDxTIST" },
   { id: "2", name: "John Savio Romy", role: "Co - Lead" },
-  { id: "3", name: "Anirudh Kannan", role: "TEDxTIST 2026 Licensee and Organiser" },
-  { id: "4", name: "Anjali", role: "Lead Supervisor" },
+  { id: "3", name: "Anirudh K", role: "TEDxTIST 2026 Licensee and Organiser" },
+  { id: "4", name: "Anjali Biju", role: "Lead Supervisor" },
   { id: "5", name: "Sanjana Vijay", role: "Operations Lead" },
   { id: "6", name: "Christene Sara John", role: "Operations Lead" },
   { id: "7", name: "Mary Ann", role: "Venue & Infrastructure Lead (Operations)" },
