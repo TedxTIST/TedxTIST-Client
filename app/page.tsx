@@ -188,7 +188,7 @@ export default function Home() {
       {/* Us Section */}
       <section
         id="us"
-        className="flex flex-col items-center px-6 pt-24 text-center"
+        className="flex min-h-screen flex-col items-center justify-center px-6 pb-16 text-center w-full overflow-x-hidden"
       >
         <h2 className="mb-4 text-5xl font-bold leading-tight text-red-600 sm:text-6xl lg:text-7xl">
           The Team
@@ -196,7 +196,9 @@ export default function Home() {
         <p className="mb-10 max-w-lg text-base text-white/60 sm:text-lg">
           The people behind TEDxTIST
         </p>
-        <Carousel />
+        <div className="w-full flex justify-center">
+          <Carousel />
+        </div>
       </section>
     </>
   );

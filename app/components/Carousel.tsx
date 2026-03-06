@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 type Slide = {
   id: string;
@@ -22,7 +22,7 @@ const slides: Slide[] = [
   { id: "11", name: "Aakash Rajeev", role: "Technical Lead" },
   { id: "12", name: "Leanne George", role: "Documentation & Compliance Lead" },
   { id: "13", name: "Joyel Sebastian", role: "Social Media Coordinator" },
-  { id: "14", name: "Ganga Giresh", role: "Design Lead" },
+  { id: "14", name: "Ganga Gireesh", role: "Design Lead" },
   { id: "15", name: "Sruthika", role: "Visual Identity & Assets Lead (Design)" },
   { id: "16", name: "Devi Anjana", role: "Merch and Brand Experience Lead(Design)" },
   { id: "17", name: "Aswin Philip Raju", role: "Volunteer Coordinator" },
@@ -33,207 +33,202 @@ const slides: Slide[] = [
   { id: "22", name: "Vignesh Nair", role: "Cluster Lead" },
 ];
 
-const CARD_WIDTH = 312;
-const CARD_GAP = 36;
-const SCROLL_PER_SLIDE = 150;
+const SCROLL_DURATION = 200;
 
 export default function Carousel() {
-  const [displayPosition, setDisplayPosition] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const targetPositionRef = useRef(0);
-  const rafRef = useRef<number | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isScrollingRef = useRef(false);
+  const animationFrameId = useRef<number | null>(null);
 
-  const trackStep = CARD_WIDTH + CARD_GAP;
-  const roundedPosition = Math.round(displayPosition);
-  const activeIndex = Math.max(0, Math.min(slides.length - 1, roundedPosition));
+  // Dynamic responsive dimensions
+  const cardWidth = isMobile ? 260 : 312;
+  const cardHeight = isMobile ? 325 : 390;
+  const cardGap = isMobile ? 24 : 36; // 24px = gap-6, 36px = gap-9
+  const paddingOffset = cardWidth / 2;
 
-  const totalScrollDistance = (slides.length - 1) * SCROLL_PER_SLIDE;
-
-  // Smooth animation loop
+  // Detect screen size on mount and resize
   useEffect(() => {
-    const animate = () => {
-      setDisplayPosition((current) => {
-        const target = targetPositionRef.current;
-        const next = current + (target - current) * 0.18;
-        if (Math.abs(target - next) < 0.001) {
-          return target;
-        }
-        return next;
-      });
-
-      rafRef.current = requestAnimationFrame(animate);
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
     };
+    
+    // Set initial value
+    handleResize();
 
-    rafRef.current = requestAnimationFrame(animate);
-
-    return () => {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
-    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Drive carousel position from page scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      const container = containerRef.current;
-      if (!container) return;
+  const executeScroll = useCallback((index: number) => {
+    if (!scrollContainerRef.current) return;
+    const container = scrollContainerRef.current;
+    const itemWidth = cardWidth + cardGap;
+    const targetLeft = index * itemWidth;
 
-      const scrollProgress = -container.getBoundingClientRect().top;
+    const startLeft = container.scrollLeft;
+    const distance = targetLeft - startLeft;
+    let startTime: number | null = null;
 
-      if (scrollProgress <= 0) {
-        targetPositionRef.current = 0;
-      } else if (scrollProgress >= totalScrollDistance) {
-        targetPositionRef.current = slides.length - 1;
+    if (animationFrameId.current !== null) {
+      cancelAnimationFrame(animationFrameId.current);
+    }
+
+    isScrollingRef.current = true;
+    container.style.scrollSnapType = "none";
+
+    const animation = (currentTime: number) => {
+      if (startTime === null) startTime = currentTime;
+      const timeElapsed = currentTime - startTime;
+      const progress = Math.min(timeElapsed / SCROLL_DURATION, 1);
+
+      const ease = progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+      container.scrollLeft = startLeft + distance * ease;
+
+      if (timeElapsed < SCROLL_DURATION) {
+        animationFrameId.current = requestAnimationFrame(animation);
       } else {
-        targetPositionRef.current =
-          (scrollProgress / totalScrollDistance) * (slides.length - 1);
+        container.style.scrollSnapType = "x mandatory";
+        isScrollingRef.current = false;
       }
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [totalScrollDistance]);
+    animationFrameId.current = requestAnimationFrame(animation);
+  }, [cardWidth, cardGap]); // Re-create function if dimensions change
 
-  const navigate = useCallback(
-    (step: number) => {
-      const container = containerRef.current;
-      if (!container) return;
-      const containerTop =
-        container.getBoundingClientRect().top + window.scrollY;
-      const newTarget = Math.max(
-        0,
-        Math.min(
-          slides.length - 1,
-          Math.round(targetPositionRef.current) + step
-        )
-      );
-      const targetScroll =
-        containerTop +
-        (newTarget / (slides.length - 1)) * totalScrollDistance;
-      window.scrollTo({ top: targetScroll, behavior: "smooth" });
-    },
-    [totalScrollDistance]
-  );
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
 
-  const jumpToIndex = useCallback(
-    (targetIndex: number) => {
-      const container = containerRef.current;
-      if (!container) return;
-      const containerTop =
-        container.getBoundingClientRect().top + window.scrollY;
-      const targetScroll =
-        containerTop +
-        (targetIndex / (slides.length - 1)) * totalScrollDistance;
-      window.scrollTo({ top: targetScroll, behavior: "smooth" });
-    },
-    [totalScrollDistance]
-  );
+    const handleWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        const isAtLeftEdge = container.scrollLeft <= 0;
+        const isAtRightEdge = Math.ceil(container.scrollLeft + container.clientWidth) >= container.scrollWidth;
+        const isScrollingUp = e.deltaY < 0;
+        const isScrollingDown = e.deltaY > 0;
 
-  const visibleSlides = useMemo(() => {
-    const cards = [];
-    for (let offset = -5; offset <= 5; offset += 1) {
-      const absolute = roundedPosition + offset;
-      if (absolute >= 0 && absolute < slides.length) {
-        cards.push({
-          key: absolute,
-          absolute,
-          slide: slides[absolute],
-        });
+        if ((isAtLeftEdge && isScrollingUp) || (isAtRightEdge && isScrollingDown)) {
+          return;
+        }
+
+        e.preventDefault();
+
+        if (isScrollingRef.current) return; 
+
+        const itemWidth = cardWidth + cardGap;
+        const currentIndex = Math.round(container.scrollLeft / itemWidth);
+        const direction = e.deltaY > 0 ? 1 : -1;
+        const nextIndex = Math.max(0, Math.min(slides.length - 1, currentIndex + direction));
+
+        if (currentIndex !== nextIndex) {
+          executeScroll(nextIndex);
+        }
       }
+    };
+
+    container.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      container.removeEventListener("wheel", handleWheel);
+    };
+  }, [executeScroll, cardWidth, cardGap]);
+
+  const handleScroll = () => {
+    if (!scrollContainerRef.current) return;
+    const scrollLeft = scrollContainerRef.current.scrollLeft;
+    const itemWidth = cardWidth + cardGap;
+    
+    const newActiveIndex = Math.round(scrollLeft / itemWidth);
+    
+    if (newActiveIndex !== activeIndex) {
+      setActiveIndex(newActiveIndex);
     }
-    return cards;
-  }, [roundedPosition]);
+  };
 
   return (
-    <div
-      ref={containerRef}
-      className="relative w-full"
-      style={{ height: `calc(100vh + ${totalScrollDistance}px)` }}
-    >
-      <div className="sticky top-0 flex h-screen items-center justify-center">
-        <div className="relative mx-auto w-full max-w-[1220px] overflow-hidden px-6 pb-16 text-white md:px-10">
-          <div className="relative h-[430px] flex items-center justify-center overflow-hidden">
-        {visibleSlides.map(({ slide, absolute, key }) => {
+    <div className="w-full flex flex-col items-center">
+      <div 
+        className="relative flex items-center justify-center w-full" 
+        style={{ height: cardHeight + 40 }} // Dynamic container height
+      >
+        
+        {/* Scroll Container */}
+        <div
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className="flex w-full overflow-x-auto snap-x snap-mandatory items-center h-full"
+          style={{ 
+            scrollbarWidth: "none", 
+            msOverflowStyle: "none",
+            gap: `${cardGap}px`, // Dynamic gap
+            paddingLeft: `calc(50% - ${paddingOffset}px)`, // Dynamic padding to perfectly center
+            paddingRight: `calc(50% - ${paddingOffset}px)`
+          }}
+        >
+          <style dangerouslySetInnerHTML={{ __html: `::-webkit-scrollbar { display: none; }` }} />
 
-          const offset = absolute - displayPosition;
-          if (Math.abs(offset) > 3.6) {
-            return null;
-          }
+          {slides.map((slide, idx) => {
+            const isActive = idx === activeIndex;
 
-          const isActive = offset === 0; // Only the centered slide is considered active
-          const translateX = offset * trackStep;
-          const distance = Math.abs(offset);
-          const scale = Math.max(0.76, 1 - distance * 0.11);
-          const opacity = Math.max(0.35, 1 - distance * 0.23);
-
-          return (
-            <article
-              key={`${slide.id}-${key}`}
-              className="absolute left-1/2 top-1/2 h-[390px] w-[312px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[28px] border border-red-700/40 bg-red-700/70 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
-              style={{
-                transform: `translateX(calc(-50% + ${translateX}px)) scale(${scale})`,
-                opacity,
-                zIndex: 30 - Math.abs(offset),
-              }}
-              aria-hidden={!isActive || distance > 0.5}
-            >
-              <div className="absolute inset-0 bg-gradient-to-b from-[#ff0033] via-[#bd0024] to-[#670014]" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_38%_30%,rgba(255,255,255,0.18),transparent_55%)]" />
-
-              <div className="absolute left-1/2 top-16 h-[300px] w-[260px] -translate-x-1/2 rounded-[45%] bg-gradient-to-b from-zinc-400/70 to-zinc-900/85 grayscale" />
-              <div className="absolute left-[58%] top-[42%] h-24 w-24 rounded-full bg-black/45 blur-sm" />
-
-              {distance < 0.5 && (
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-red-600/50 via-red-500/35 to-transparent px-5 pb-7 pt-12">
-                  <p className="text-3xl font-bold tracking-tight">{slide.name}</p>
-                  <p className="mt-1 text-lg text-white/90">{slide.role}</p>
-                </div>
-              )}
-
-              {!isActive && (
-                <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/35 to-transparent" />
-              )}
-
-              <button
-                type="button"
-                aria-label={`Show ${slide.name}`}
-                onClick={() => {
-                  const step = Math.round(offset);
-                  if (step !== 0) {
-                    navigate(step);
+            return (
+              <div
+                key={slide.id}
+                onClick={() => executeScroll(idx)}
+                style={{ width: cardWidth, height: cardHeight }} // Dynamic card sizing
+                className={`snap-center shrink-0 transition-all duration-200 cursor-pointer rounded-[48px] overflow-hidden relative flex flex-col items-center justify-end border focus:outline-none
+                  ${isActive 
+                    ? "scale-100 z-20 border-red-700/40 shadow-[0_30px_80px_rgba(220,38,38,0.35)]" 
+                    : "scale-85 z-10 border-transparent opacity-60 brightness-50 grayscale hover:opacity-80"
                   }
-                }}
-                className="absolute inset-0"
-              />
-            </article>
-          );
-        })}
+                `}
+                aria-hidden={!isActive}
+              >
+                <div className={`absolute inset-0 transition-colors duration-200 ${isActive ? 'bg-red-700/70' : 'bg-red-950'}`} />
+                
+                {isActive && (
+                  <>
+                    <div className="absolute inset-0 bg-gradient-to-b from-[#ff0033] via-[#bd0024] to-[#670014]" />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_38%_30%,rgba(255,255,255,0.18),transparent_55%)]" />
+                  </>
+                )}
 
+                {/* Subject Image Placeholder - Scales down slightly on mobile */}
+                <div className={`absolute left-1/2 -translate-x-1/2 rounded-[45%] bg-gradient-to-b from-zinc-400/70 to-zinc-900/85 grayscale mix-blend-overlay ${isMobile ? 'top-10 h-[250px] w-[210px]' : 'top-16 h-[300px] w-[260px]'}`} />
+                <div className="absolute left-[58%] top-[42%] h-24 w-24 rounded-full bg-black/45 blur-sm" />
 
-          </div>
-
-          <div className="mt-6 flex items-center justify-center gap-2">
-            {slides.map((slide, index) => {
-              const isActive = index === activeIndex;
-
-              return (
-                <button
-                  key={slide.id}
-                  type="button"
-                  onClick={() => jumpToIndex(index)}
-                  aria-label={`Go to slide ${index + 1}`}
-                  className={`rounded-full border transition-all duration-300 ${
-                    isActive
-                      ? "h-3.5 w-3.5 border-red-500/80 bg-gradient-to-b from-red-500 to-red-900 shadow-[0_0_10px_rgba(220,38,38,0.6)]"
-                      : "h-2.5 w-2.5 border-red-800/70 bg-gradient-to-b from-red-900/70 to-black"
-                  }`}
-                />
-              );
-            })}
-          </div>
+                {/* Text Overlay */}
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-red-900/90 via-red-600/50 to-transparent px-5 pb-7 pt-12">
+                  <p className={`font-bold tracking-tight text-center transition-colors duration-200 ${isActive ? 'text-white' : 'text-white/70'} ${isMobile ? 'text-2xl' : 'text-3xl'}`}>
+                    {slide.name}
+                  </p>
+                  <p className={`mt-1 text-center transition-colors duration-200 ${isActive ? 'text-white/90' : 'text-white/50'} ${isMobile ? 'text-base' : 'text-lg'}`}>
+                    {slide.role}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
         </div>
+      </div>
+
+      {/* Pagination Dots */}
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-2 max-w-[90%] md:max-w-[80%]">
+        {slides.map((slide, idx) => (
+          <button
+            key={slide.id}
+            onClick={() => executeScroll(idx)}
+            aria-label={`Go to slide ${idx + 1}`}
+            className={`rounded-full border focus:outline-none transition-all duration-200 ${
+              idx === activeIndex
+                ? "h-3.5 w-3.5 border-red-500/80 bg-gradient-to-b from-red-500 to-red-900 shadow-[0_0_10px_rgba(220,38,38,0.6)]"
+                : "h-2.5 w-2.5 border-red-800/70 bg-gradient-to-b from-red-900/70 to-black hover:bg-red-800/50"
+            }`}
+          />
+        ))}
       </div>
     </div>
   );
