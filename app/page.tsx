@@ -131,7 +131,7 @@ export default function Home() {
         className="relative flex min-h-screen flex-col md:flex-row items-center overflow-hidden md:px-16 lg:px-24"
       >
         {/* Text Content — Left */}
-        <div className="z-10 flex w-full flex-col md:w-[35%] items-start text-left max-w-xl px-6 md:px-0 pt-24 md:pt-0">
+        <div className="z-10 flex w-full flex-col md:w-[45%] items-start text-left max-w-xl px-6 md:px-0 pt-24 md:pt-0">
           <h2 className="text-5xl font-bold leading-tight text-red-600 sm:text-6xl lg:text-7xl">
             About
           </h2>
@@ -140,11 +140,7 @@ export default function Home() {
             and management institution that emphasizes global technological advancements,
             innovation and holistic student development. Offering a comprehensive range of 
             B.Tech, M.Tech and MBA programmes, the institute focuses on interdiscilinary collaboration
-            and entrepreneurship to incubate "job creators" rather than just job seekers. TIST is distinguished
-            by its dedicated research wing- The J.C. Bose Center for Research and Advanced Studies-alongside
-            unique initiatives like the TIST School of Education and Leadership and a specialized department
-            of Applied Psychology and Counselling, all designed to foster academic excellence, mental well
-            -being and proactive nation building.
+            and entrepreneurship to incubate "job creators" rather than just job seekers. 
           </p>
         </div>
 
