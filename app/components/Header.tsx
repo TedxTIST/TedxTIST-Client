@@ -21,7 +21,7 @@ export default function Header() {
       {/*<header className="fixed top-0 left-0 z-50 w-full backdrop-blur-md bg-black/20 border-b border-white/5" */}
       <div className="mx-auto flex max-w-8xl items-center justify-between px-6 py-3">
         {/* Logo */}
-        <a href="#home" className="flex items-center gap-10">
+        <a href="#home" className="flex items-center gap-10 w-auto">
           <Image
             src="/logo-white 4.png"
             alt="TEDxTIST Logo"
