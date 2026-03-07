@@ -16,7 +16,7 @@ const teamNames = [
   "Sanjana Vijay", "Christene Sara John", "Mary Ann", "Gayathri J S", 
   "Cyrus Babu", "Aadhil Kassim", "Aakash Rajeev", "Leanne George", 
   "Joyel Sebastian", "Ganga Gireesh", "Sruthika", "Devi Anjana", 
-  "Aswin Philip Raju", "Calvin Binu", "Ram Uday", "Abhishek Sadasivan", 
+  "Aswin Philip Raju", "Calvin Binu", "Ram Uday", "Abhishek Sivadasan", 
   "Eldho G Blayil", "Vignesh Nair"
 ];
 
