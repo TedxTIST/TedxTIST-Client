@@ -215,7 +215,7 @@ export default function Carousel() {
                 className={`snap-center shrink-0 transition-all duration-200 cursor-pointer rounded-[clamp(2rem,4vw,3rem)] overflow-hidden relative flex flex-col items-center border focus:outline-none
                   ${isActive
                     ? "scale-100 z-20 border-red-700/40 shadow-[0_30px_80px_rgba(220,38,38,0.35)]"
-                    : "scale-85 z-10 border-transparent opacity-50 brightness-40 grayscale hover:opacity-80"
+                    : "scale-85 z-10 border-transparent brightness-40 grayscale hover:opacity-80"
                   }
                 `}
                 aria-hidden={!isActive}
