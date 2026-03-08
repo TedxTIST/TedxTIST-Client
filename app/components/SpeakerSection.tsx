@@ -248,7 +248,7 @@ export default function SpeakerSection() {
           {/* Top on mobile, Left on desktop: Name + Bio */}
           <div className="order-1 flex flex-col flex-1 min-w-0 md:w-1/2">
             <h2 className="font-[family-name:var(--font-allura)] text-5xl leading-tight text-red-600 sm:text-5xl lg:text-7xl">
-              {speaker.name}
+              <span style={{ textShadow: '0 0 12px rgba(0, 0, 0, 0.9), 0 0 2px #470f0f' }}>{speaker.name}</span>
             </h2>
             <p className="mt-3 md:mt-6 max-w-lg text-base leading-relaxed text-white/70 sm:text-lg md:text-base lg:text-xl line-clamp-5 md:line-clamp-none">
               {speaker.bio}

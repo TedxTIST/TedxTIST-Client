@@ -18,12 +18,13 @@ function isWebGLSupported() {
 }
 
 export default function ConditionalFluidCursorBackground() {
-  const [supported, setSupported] = useState(false);
+  const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
-    setSupported(isWebGLSupported());
+    const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;
+    setEnabled(isWebGLSupported() && !isMobile);
   }, []);
 
-  if (!supported) return null;
+  if (!enabled) return null;
   return <FluidCursorBackground />;
 }
