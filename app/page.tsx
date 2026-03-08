@@ -182,7 +182,7 @@ export default function Home() {
         <div className="z-10 flex w-full flex-col items-start justify-center md:w-[45%] pl-[clamp(1.5rem,5vw,6rem)] pr-[clamp(1.5rem,5vw,6rem)] md:pr-0 shrink-0 py-[clamp(4rem,10vh,6rem)]">
           {/* Heading */}
           <h2 className="mb-[clamp(0.5rem,1.5vh,1rem)] text-[clamp(3.5rem,7vw,6.5rem)] font-black uppercase leading-none tracking-wide text-[#eb0028]">
-            TICKETS
+            <span className="block pt-25 md:pt-0">TICKETS</span>
           </h2>
           
           {/* Subtext */}
@@ -257,10 +257,10 @@ export default function Home() {
 
         {/* Right: Ticket Image */}
         {/* Absolute right alignment for md+ screens, normal flow on mobile */}
-        <div className="z-10 flex w-full md:w-[55%] flex-1 items-center justify-end pr-0 ml-auto mt-[clamp(2rem,4vh,0px)] md:mt-0 relative">
+        <div className="z-10 flex w-full md:w-[55%] flex-1 items-center justify-end pr-0 ml-auto mt-[clamp(0.5rem,1vh,0px)] pb-6 md:pb-0 md:mt-0 relative">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/Ticket Component web.png"
+            src="/Ticket Component.png"
             alt="TEDxTIST Stage Admit Card"
             className="block h-auto w-full max-w-[clamp(450px,55vw,1200px)] object-contain object-right drop-shadow-[0_0_40px_rgba(235,0,40,0.15)] origin-right transition-transform duration-500 hover:scale-[1.02] md:absolute md:right-0 md:top-1/2 md:-translate-y-1/2 md:w-auto"
             style={{ right: 0 }}
