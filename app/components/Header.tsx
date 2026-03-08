@@ -22,13 +22,14 @@ export default function Header() {
       <div className="mx-auto flex max-w-8xl items-center justify-between px-6 py-3">
         {/* Logo */}
         <a href="#home" className="flex items-center gap-10 w-auto">
-          <Image
-            src="/logo-white 4.png"
-            alt="TEDxTIST Logo"
-            width={250}
-            height={80}
-            priority
-          />
+            <Image
+              src="/logo-white 4.png"
+              alt="TEDxTIST Logo"
+              width={250}
+              height={80}
+              priority
+              style={{ height: "auto" }}
+            />
         </a>
 
         {/* Navigation — Desktop */}
