@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Allura, Geist, Geist_Mono } from "next/font/google";
-import FluidCursorBackground from "./components/FluidCursorBackground";
+import ConditionalFluidCursorBackground from "./components/ConditionalFluidCursorBackground";
 import Image from "next/image";
 import Header from "./components/Header";
 import ThemeToggle from "./components/ThemeToggle";
@@ -37,7 +37,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${allura.variable} antialiased relative`}
       >
         {/* <Image src="/BG threads.jpg" alt="Background" fill className="fixed inset-0 -z-10 object-cover" /> */}
-        <FluidCursorBackground />
+        <ConditionalFluidCursorBackground />
         <Header />
         <div className="relative z-10">{children}</div>
       </body>
