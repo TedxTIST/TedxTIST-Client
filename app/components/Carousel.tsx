@@ -17,7 +17,7 @@ const slides: Slide[] = [
   { id: "5", name: "Sanjana Vijay", role: "Operations Lead", image: "/team/Sanjana Vijay.jpg" },
   { id: "6", name: "Christene Sara John", role: "Operations Lead", image: "/team/Christene Sara John.jpg" },
   { id: "7", name: "Mary Ann", role: "Venue & Infrastructure Lead (Operations)", image: "/team/Mary Ann.jpg" },
-  { id: "8", name: "Gayathri J S", role: "Experience & Hospitality Lead (Operations)", image: "/team/Gayathri J S.jpeg" },
+  { id: "8", name: "Gayathri J S", role: "Experience & Hospitality Lead (Operations)", image: "/team/Gayathri J S.jpg" },
   { id: "9", name: "Cyrus Babu", role: "Production and Stage Lead (Operations)", image: "/team/Cyrus Babu.jpg" },
   { id: "10", name: "Aadhil Kassim", role: "Technical Lead", image: "/team/Aadhil Kassim.jpg" },
   { id: "11", name: "Aakash Rajeev", role: "Technical Lead", image: "/team/Aakash Rajeev.jpg" },

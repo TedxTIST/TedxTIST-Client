@@ -23,7 +23,8 @@ const teamNames = [
 const customAliases = {
   "shruthika": "Sruthika",
   "sanjana": "Sanjana Vijay",
-  "vighnesh": "Vignesh Nair"
+  "vighnesh": "Vignesh Nair",
+  "Mary": "Mary Ann",
 };
 
 const normalizeString = (str) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
