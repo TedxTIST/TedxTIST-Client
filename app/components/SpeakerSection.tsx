@@ -1,86 +1,24 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 
-function getMobileSrc(src: string): string {
-  // /speakers/aksomaniac.png → /speakers/compressed-mobile/aksomaniac-mobile.webp
-  const match = src.match(/^\/speakers\/(.+)\.png$/);
-  if (!match) return src;
-  return `/speakers/compressed-mobile/${match[1]}-mobile.webp`;
-}
 
-// Preload cache — ensures each image is fetched only once
-const preloadedImages = new Set<string>();
-const isMobileQuery = typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)") : null;
 
-function isSlowNetwork(): boolean {
-  if (typeof navigator === "undefined") return false;
-  const conn = (navigator as Navigator & { connection?: { effectiveType?: string; saveData?: boolean } }).connection;
-  if (!conn) return false;
-  // Treat 2g, slow-2g, or data-saver mode as slow
-  return conn.saveData === true || conn.effectiveType === "slow-2g" || conn.effectiveType === "2g" || conn.effectiveType === "3g";
-}
 
-function shouldUseWebp(): boolean {
-  return !!(isMobileQuery?.matches) || isSlowNetwork();
-}
-
-function preloadImage(src: string) {
-  // Pick webp on mobile or slow networks, full PNG otherwise
-  const resolvedSrc = shouldUseWebp() ? getMobileSrc(src) : src;
-  if (preloadedImages.has(resolvedSrc)) return;
-  preloadedImages.add(resolvedSrc);
-  const img = new Image();
-  img.src = resolvedSrc;
-}
 
 function SpeakerImage({ src, alt, priority = false }: { src: string; alt: string; priority?: boolean }) {
-  const [hasError, setHasError] = useState(false);
-  const [slowNet, setSlowNet] = useState(false);
-
-  useEffect(() => {
-    setHasError(false);
-    setSlowNet(isSlowNetwork());
-  }, [src]);
-
-  const mobileSrc = getMobileSrc(src);
-
+  // You may want to adjust width/height based on your design
   return (
-    <>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <picture>
-        {/* Always serve webp on mobile */}
-        <source media="(max-width: 767px)" srcSet={mobileSrc} type="image/webp" />
-        {/* Also serve webp on desktop when network is slow */}
-        {slowNet && <source srcSet={mobileSrc} type="image/webp" />}
-        <img
-          src={slowNet ? mobileSrc : src}
-          alt={alt}
-          className={`h-full w-full object-cover object-top grayscale ${
-            hasError ? "invisible" : ""
-          }`}
-          loading={priority ? "eager" : "lazy"}
-          decoding="async"
-          fetchPriority={priority ? "high" : "low"}
-          onError={() => setHasError(true)}
-        />
-      </picture>
-      {hasError && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl">
-          <svg
-            width="120"
-            height="120"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="rgba(255,255,255,0.2)"
-            strokeWidth="1"
-          >
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-        </div>
-      )}
-    </>
+    <Image
+      src={src}
+      alt={alt}
+      width={400}
+      height={400}
+      priority={priority}
+      className="h-full w-full object-cover object-top grayscale rounded-2xl"
+      loading={priority ? "eager" : "lazy"}
+    />
   );
 }
 
@@ -175,20 +113,7 @@ export default function SpeakerSection() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Prefetch current + next 2 speaker images progressively
-  useEffect(() => {
-    for (let offset = 0; offset <= 2; offset++) {
-      const idx = currentIndex + offset;
-      if (idx < speakers.length) {
-        preloadImage(speakers[idx].image);
-      }
-    }
-  }, [currentIndex]);
 
-  // Eagerly preload first speaker image on mount
-  useEffect(() => {
-    preloadImage(speakers[0].image);
-  }, []);
 
   const speaker = speakers[currentIndex];
 

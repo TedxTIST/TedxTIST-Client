@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Button from "./Button";
 
 const navLinks = [
@@ -15,9 +15,27 @@ const navLinks = [
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const lastScroll = useRef(0);
+
+  // Auto-hide header on scroll for screens < 1280px (HD or smaller)
+  useEffect(() => {
+    function handleScroll() {
+      if (window.innerWidth >= 1280) return; // Only apply on small screens
+      const curr = window.scrollY;
+      if (curr > lastScroll.current && curr > 40) {
+        setHidden(true); // scrolling down
+      } else {
+        setHidden(false); // scrolling up
+      }
+      lastScroll.current = curr;
+    }
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
-    <header className="fixed top-0 left-0 z-50 w-full ">
+    <header className={`fixed top-0 left-0 z-50 w-full transition-transform duration-300 ${hidden ? "-translate-y-full" : "translate-y-0"}`}>
       {/*<header className="fixed top-0 left-0 z-50 w-full backdrop-blur-md bg-black/20 border-b border-white/5" */}
       <div className="mx-auto flex max-w-8xl items-center justify-between px-6 py-3">
         {/* Logo */}
