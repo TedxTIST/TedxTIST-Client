@@ -82,18 +82,18 @@ export default function Button({
       onMouseLeave={handleMouseLeave}
       {...props}
     >
-      {/* Gradient border (crimson → purple) */}
+      {/* Gradient border (ted red → yellow) */}
       <span
         ref={borderRef}
         aria-hidden
         className="pointer-events-none absolute inset-0 z-0 rounded-[inherit]"
         style={{
-          background: "linear-gradient(to right, #dc2626, #9333ea)",
+          background: "linear-gradient(to right, #eb0028, #eab933)",
           WebkitMask:
             "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
           WebkitMaskComposite: "xor",
           maskComposite: "exclude",
-          padding: "1px",
+          padding: "2px",
         }}
       />
       {/* Radial crimson glow that follows the cursor */}
@@ -102,7 +102,7 @@ export default function Button({
           aria-hidden
           className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-200"
           style={{
-            background: `radial-gradient(circle 60px at ${pos.x}px ${pos.y}px, rgba(220,38,38,0.7) 0%, transparent 100%)`,
+            background: `radial-gradient(circle 60px at ${pos.x}px ${pos.y}px, #eb0028 0%, transparent 100%)`,
           }}
         />
       )}
