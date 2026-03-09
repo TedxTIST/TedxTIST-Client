@@ -1,15 +1,13 @@
 
-// Enable ISR: Regenerate this page every 600000 seconds
-export const revalidate = 600000;
+// Enable ISR: Regenerate this page every 600 seconds
+export const revalidate = 600; // 10 minutes
 
 
 import Image from "next/image";
-import Button from "./components/Button";
 import CTAHeroButtons from "./components/CTAHeroButtons";
 import Carousel from "./components/Carousel";
 import SpeakerSection from "./components/SpeakerSection";
 import TicketsSection from "./components/TicketsSection";
-import WatchPartyTooltip from "./components/WatchPartyTooltip";
 
 export default function Home() {
   return (
