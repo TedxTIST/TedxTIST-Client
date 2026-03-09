@@ -34,7 +34,14 @@ const slides: Slide[] = [
   { id: "22", name: "Vignesh Nair", role: "Cluster Lead", image: "/team/Vignesh Nair.jpeg" },
 ];
 
-const SCROLL_DURATION = 200;
+function getScrollDuration() {
+  if (typeof window !== "undefined" && window.innerWidth < 768) {
+    return 100; // Faster on mobile
+  }
+  return 200;
+}
+
+const SCROLL_DURATION = typeof window !== "undefined" ? getScrollDuration() : 200;
 
 export default function Carousel() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -103,8 +110,9 @@ export default function Carousel() {
 
     const animation = (currentTime: number) => {
       if (startTime === null) startTime = currentTime;
+      const duration = getScrollDuration();
       const timeElapsed = currentTime - startTime;
-      const progress = Math.min(timeElapsed / SCROLL_DURATION, 1);
+      const progress = Math.min(timeElapsed / duration, 1);
 
       // Make the scroll more snappy on mobile
       const ease = window.innerWidth < 768
@@ -115,7 +123,7 @@ export default function Carousel() {
 
       container.scrollLeft = startLeft + distance * ease;
 
-      if (timeElapsed < SCROLL_DURATION) {
+      if (timeElapsed < duration) {
         animationFrameId.current = requestAnimationFrame(animation);
       } else {
         container.style.scrollSnapType = "x mandatory";
