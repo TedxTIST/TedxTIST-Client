@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Button from "./components/Button";
 import Carousel from "./components/Carousel";
 import SpeakerSection from "./components/SpeakerSection";
