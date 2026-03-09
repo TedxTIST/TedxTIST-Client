@@ -112,17 +112,6 @@ export default function Home() {
       </section>
 
 
-
-      {/* Speakers Section */}
-      <section>
-        <SpeakerSection />
-      </section>
-
-
-      {/* Tickets Section */}
-      <TicketsSection />
-
-
       {/* About Section */}
       <section
         id="about"
@@ -161,6 +150,17 @@ export default function Home() {
           />
         </div>
       </section>
+
+      {/* Speakers Section */}
+      <section>
+        <SpeakerSection />
+      </section>
+
+
+      {/* Tickets Section */}
+      <TicketsSection />
+
+
 
 
       {/* Sponsors Section */}
