@@ -1,6 +1,6 @@
 
-// Enable ISR: Regenerate this page every 60 seconds
-export const revalidate = 60;
+// Enable ISR: Regenerate this page every 600000 seconds
+export const revalidate = 600000;
 
 
 import Image from "next/image";
@@ -133,10 +133,12 @@ export default function Home() {
 
         {/* Image — right-aligned on desktop */}
         <div className="relative w-full mt-auto md:mt-0 md:absolute md:bottom-0 md:right-0 md:w-8/12">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src="/TIST-main-block.png"
             alt="TIST Campus"
+            width={1920}
+            height={1080}
+            priority
             className="w-[100vw] max-w-none h-full object-cover object-bottom grayscale md:w-full md:max-w-full"
             style={{ left: '50%', transform: 'translateX(-50%)', position: 'relative' }}
           />
