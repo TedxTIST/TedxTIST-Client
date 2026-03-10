@@ -93,28 +93,31 @@ export default function FluidCursorBackground() {
 			const p1x = innerWidth * 0.38,  p1y = innerHeight * 0.42;  // X center convergence
 			const p2x = innerWidth * -0.12, p2y = innerHeight * 0.75;  // exit bottom-left
 
-			// Evaluate quadratic bezier at parameter t.
+
+			// Reusable vector objects for bezier math
+			const bezierVec = { x: 0, y: 0 };
+			const tangentVec = { x: 0, y: 0 };
+
+			// Evaluate quadratic bezier at parameter t, writing to bezierVec
 			const bezier = (t: number) => {
 				const u = 1 - t;
-				return {
-					x: u * u * p0x + 2 * u * t * p1x + t * t * p2x,
-					y: u * u * p0y + 2 * u * t * p1y + t * t * p2y,
-				};
+				bezierVec.x = u * u * p0x + 2 * u * t * p1x + t * t * p2x;
+				bezierVec.y = u * u * p0y + 2 * u * t * p1y + t * t * p2y;
+				return bezierVec;
 			};
-			// Tangent (first derivative) at parameter t.
+			// Tangent (first derivative) at parameter t, writing to tangentVec
 			const bezierTangent = (t: number) => {
 				const u = 1 - t;
-				return {
-					tx: 2 * u * (p1x - p0x) + 2 * t * (p2x - p1x),
-					ty: 2 * u * (p1y - p0y) + 2 * t * (p2y - p1y),
-				};
+				tangentVec.x = 2 * u * (p1x - p0x) + 2 * t * (p2x - p1x);
+				tangentVec.y = 2 * u * (p1y - p0y) + 2 * t * (p2y - p1y);
+				return tangentVec;
 			};
 
 			threadsRef.current = Array.from({ length: THREAD_COUNT }, () => {
 				// t=0 is right (entry), t=1 is left (exit).
 				const t = Math.random();
 				const { x: strokeX, y: strokeY } = bezier(t);
-				const { tx, ty } = bezierTangent(t);
+				const { x: tx, y: ty } = bezierTangent(t);
 				const tangentLen = Math.hypot(tx, ty) || 1;
 
 				// Perpendicular to the curve at this point.
@@ -140,13 +143,15 @@ export default function FluidCursorBackground() {
 				const offsetTheta = Math.random() * Math.PI * 2;
 
 				// Lay segments trailing in the opposite direction of the tangent.
+				// Preallocate and reuse ThreadPoint objects
 				for (let i = 0; i < segmentCount; i += 1) {
-					points.push({
-						x: startX - Math.cos(localAngle) * i * SEGMENT_LENGTH,
-						y: startY - Math.sin(localAngle) * i * SEGMENT_LENGTH,
-						vx: 0,
-						vy: 0,
-					});
+					// Use a single object pool for points
+					const pt = { x: 0, y: 0, vx: 0, vy: 0 };
+					pt.x = startX - Math.cos(localAngle) * i * SEGMENT_LENGTH;
+					pt.y = startY - Math.sin(localAngle) * i * SEGMENT_LENGTH;
+					pt.vx = 0;
+					pt.vy = 0;
+					points.push(pt);
 				}
 
 				return {

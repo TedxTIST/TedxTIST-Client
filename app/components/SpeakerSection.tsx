@@ -83,38 +83,46 @@ const speakers: Speaker[] = [
 
 export default function SpeakerSection() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [progress, setProgress] = useState(0);
+  const currentIndexRef = useRef(0);
+  const progressRef = useRef(0);
+  const [, forceUpdate] = useState(0); // Only for speaker change
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      const container = containerRef.current;
-      if (!container) return;
-
-      const rect = container.getBoundingClientRect();
-      const containerTop = -rect.top;
-      const scrollableHeight = container.scrollHeight - window.innerHeight;
-
-      if (scrollableHeight <= 0) return;
-
-      const rawProgress = Math.max(0, Math.min(1, containerTop / scrollableHeight));
-      const index = Math.min(
-        speakers.length - 1,
-        Math.floor(rawProgress * speakers.length)
-      );
-
-      setCurrentIndex(index);
-      setProgress(rawProgress);
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const container = containerRef.current;
+          if (!container) return;
+          const rect = container.getBoundingClientRect();
+          const containerTop = -rect.top;
+          const scrollableHeight = container.scrollHeight - window.innerHeight;
+          if (scrollableHeight <= 0) return;
+          const rawProgress = Math.max(0, Math.min(1, containerTop / scrollableHeight));
+          const index = Math.min(
+            speakers.length - 1,
+            Math.floor(rawProgress * speakers.length)
+          );
+          // Only force React update if speaker changes
+          if (currentIndexRef.current !== index) {
+            currentIndexRef.current = index;
+            forceUpdate((n) => n + 1);
+          }
+          progressRef.current = rawProgress;
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
-
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
-
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
 
 
+  const currentIndex = currentIndexRef.current;
+  const progress = progressRef.current;
   const speaker = speakers[currentIndex];
 
   // Calculate per-speaker progress (0-1) for the active speaker

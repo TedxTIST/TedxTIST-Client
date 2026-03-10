@@ -36,13 +36,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${allura.variable} antialiased relative dark bg-black`}
       >
-        {/* <Image
-          src="/BG threads.jpg"
-          alt="Background"
-          fill
-          className="fixed top-0 left-0 w-full h-1080 object-cover pointer-events-none select-none"
-          priority
-        /> */}
+       
         <ConditionalFluidCursorBackground />
         <Header />
         <div className="relative z-10">{children}</div>

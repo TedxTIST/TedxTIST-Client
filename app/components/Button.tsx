@@ -37,13 +37,8 @@ export default function Button({
   const [isHovered, setIsHovered] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
 
-  // Sync the border span's border-radius with the button's computed radius
-  useEffect(() => {
-    if (btnRef.current && borderRef.current) {
-      const radius = getComputedStyle(btnRef.current).borderRadius;
-      borderRef.current.style.borderRadius = radius;
-    }
-  }, [className]);
+
+  // No need to sync border radius; use rounded-[inherit] and Tailwind
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -100,9 +95,17 @@ export default function Button({
       {isHovered && !isSelected && (
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-200"
+          className="pointer-events-none absolute z-0 transition-opacity duration-200"
           style={{
-            background: `radial-gradient(circle 60px at ${pos.x}px ${pos.y}px, #eb0028 0%, transparent 100%)`,
+            width: 120,
+            height: 120,
+            position: "absolute",
+            left: 0,
+            top: 0,
+            borderRadius: "50%",
+            background: "radial-gradient(circle, #eb0028 0%, transparent 80%)",
+            transform: `translate(${pos.x - 60}px, ${pos.y - 60}px)`,
+            pointerEvents: "none",
           }}
         />
       )}

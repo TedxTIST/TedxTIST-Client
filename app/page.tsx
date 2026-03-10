@@ -17,15 +17,16 @@ export default function Home() {
         id="home"
         className="relative flex min-h-screen items-center justify-end px-[clamp(1.5rem,5vw,6rem)]"
       >
-        {/* X image — left side*/}
-        {/* <div className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 w-11/20 md:w-full select-none">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-        {/* <img
-            src="/X.png"
-            alt=""
-            className="w-full object-contain"
-          />
-        </div> */}
+         {/* X background image restored with next/image and blur placeholder */}
+        <Image
+          src="/X.png"
+          alt="Background X"
+          fill
+          className="fixed top-0 left-0 w-full h-full object-contain pointer-events-none select-none"
+          priority
+          placeholder="blur"
+          blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/w8AAn8B9nQn2wAAAABJRU5ErkJggg=="
+        />
 
         {/* Hero Content — positioned right */}
         <div className="z-10 flex flex-col items-start text-left max-w-[clamp(30rem,40vw,36rem)]">
@@ -137,6 +138,7 @@ export default function Home() {
             width={1920}
             height={1080}
             priority
+            sizes="(max-width: 600px) 100vw, (max-width: 1200px) 80vw, 60vw"
             className="w-[100vw] max-w-none h-full object-cover object-bottom grayscale md:w-full md:max-w-full"
             style={{ left: '50%', transform: 'translateX(-50%)', position: 'relative' }}
           />
