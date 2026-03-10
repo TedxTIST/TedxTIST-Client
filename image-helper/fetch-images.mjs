@@ -25,6 +25,7 @@ const customAliases = {
   "sanjana": "Sanjana Vijay",
   "vighnesh": "Vignesh Nair",
   "Mary": "Mary Ann",
+  "John Savio": "John Savio Romy",
 };
 
 const normalizeString = (str) => str.toLowerCase().replace(/[^a-z0-9]/g, '');

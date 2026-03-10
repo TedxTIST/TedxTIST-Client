@@ -43,25 +43,40 @@ function Carousel() {
 
   const paddingOffset = dimensions.width / 2;
 
-  // Intersection Observer for active card
+  // Center detection for active card
+  const updateActiveIndex = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const cards = Array.from(container.querySelectorAll<HTMLElement>(".carousel-card"));
+    if (!cards.length) return;
+    const containerRect = container.getBoundingClientRect();
+    const containerCenter = containerRect.left + containerRect.width / 2;
+    let minDist = Infinity;
+    let closestIdx = 0;
+    cards.forEach((card, idx) => {
+      const cardRect = card.getBoundingClientRect();
+      const cardCenter = cardRect.left + cardRect.width / 2;
+      const dist = Math.abs(cardCenter - containerCenter);
+      if (dist < minDist) {
+        minDist = dist;
+        closestIdx = idx;
+      }
+    });
+    setActiveIndex(closestIdx);
+  }, []);
+
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
-    const observer = new window.IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const id = entry.target.getAttribute("data-id");
-            if (id) setActiveIndex(Number(id) - 1);
-          }
-        });
-      },
-      { threshold: 0.6, root: container }
-    );
-    const cards = container.querySelectorAll('.carousel-card');
-    cards.forEach((card) => observer.observe(card));
-    return () => observer.disconnect();
-  }, [dimensions]);
+    updateActiveIndex();
+    container.addEventListener("scroll", updateActiveIndex, { passive: true });
+    window.addEventListener("resize", updateActiveIndex);
+    return () => {
+      container.removeEventListener("scroll", updateActiveIndex);
+      window.removeEventListener("resize", updateActiveIndex);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dimensions, updateActiveIndex]);
 
   // Scroll to card on dot/click
   const scrollToCard = (idx: number) => {
