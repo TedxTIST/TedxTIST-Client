@@ -2,8 +2,6 @@
 
 import { useEffect, useRef } from "react";
 
-// import FPSCounter from "./FPSCounter";
-
 
 // Each thread's points are stored in a contiguous Float32Array.
 // For each point: [x, y, vx, vy]
@@ -60,117 +58,185 @@ export default function FluidCursorBackground() {
 			console.log("[FluidCursorBackground] workerUrl:", workerUrl);
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const animationRef = useRef<number | null>(null);
-	const workerRef = useRef<Worker | null>(null);
-	const sharedRef = useRef<Float32Array | null>(null);
+	// State for cursor position
+	const cursor = useRef({ x: 0, y: 0, moved: false });
+	// Thread pool
+	const threads = useRef<ThreadPool[]>([]);
+	// All points for all threads
+	const points = useRef<Float32Array | null>(null);
+
+	// Utility: clamp
+	function clamp(val: number, min: number, max: number) {
+		return Math.max(min, Math.min(max, val));
+	}
+
+	// Initialize threads and points
+	function initialize(width: number, height: number) {
+		threads.current = [];
+		const allPoints = new Float32Array(THREAD_COUNT * SEGMENT_COUNT * POINT_SIZE);
+		let offset = 0;
+		for (let i = 0; i < THREAD_COUNT; i++) {
+			const angle = (i / THREAD_COUNT) * Math.PI * 2;
+			const hue = (i / THREAD_COUNT) * 360;
+			const initX = width / 2 + Math.cos(angle) * BUNDLE_RADIUS;
+			const initY = height / 2 + Math.sin(angle) * BUNDLE_RADIUS;
+			threads.current.push({
+				offset,
+				length: SEGMENT_COUNT,
+				width: 1.5 + Math.sin(angle * 3) * 0.5,
+				hue,
+				driftX: Math.cos(angle) * 0.5,
+				driftY: Math.sin(angle) * 0.5,
+				targetOffsetX: 0,
+				targetOffsetY: 0,
+				initX,
+				initY,
+			});
+			for (let j = 0; j < SEGMENT_COUNT; j++) {
+				const idx = offset + j * POINT_SIZE;
+				allPoints[idx + 0] = initX;
+				allPoints[idx + 1] = initY;
+				allPoints[idx + 2] = 0;
+				allPoints[idx + 3] = 0;
+			}
+			offset += SEGMENT_COUNT * POINT_SIZE;
+		}
+		points.current = allPoints;
+	}
+
+	// Animation loop
+	function animate(width: number, height: number) {
+		if (!canvasRef.current || !points.current) return;
+		const ctx = canvasRef.current.getContext("2d");
+		if (!ctx) return;
+		ctx.clearRect(0, 0, width, height);
+
+		// Calculate bundle spread based on cursor velocity
+		let spread = BUNDLE_RADIUS;
+		if (cursor.current.moved) {
+			// Optionally, you can use velocity for more dynamic spread
+			spread = clamp(BUNDLE_RADIUS - 10, 24, BUNDLE_RADIUS);
+		}
+
+		// For each thread
+		threads.current.forEach((thread, tIdx) => {
+			const { offset, length, hue, width: threadWidth, driftX, driftY, initX, initY } = thread;
+			// Head follows cursor
+			const headIdx = offset;
+			let px = points.current![headIdx + 0];
+			let py = points.current![headIdx + 1];
+			let vx = points.current![headIdx + 2];
+			let vy = points.current![headIdx + 3];
+			// Target is cursor + thread's drift
+			const tx = cursor.current.x + driftX * spread;
+			const ty = cursor.current.y + driftY * spread;
+			let dx = tx - px;
+			let dy = ty - py;
+			vx += dx * FOLLOW_FORCE * 0.016;
+			vy += dy * FOLLOW_FORCE * 0.016;
+			// Damping
+			vx *= DAMPING;
+			vy *= DAMPING;
+			// Clamp speed
+			const speed = Math.sqrt(vx * vx + vy * vy);
+			if (speed > MAX_SPEED) {
+				vx = (vx / speed) * MAX_SPEED;
+				vy = (vy / speed) * MAX_SPEED;
+			}
+			px += vx;
+			py += vy;
+			points.current![headIdx + 0] = px;
+			points.current![headIdx + 1] = py;
+			points.current![headIdx + 2] = vx;
+			points.current![headIdx + 3] = vy;
+
+			// Each segment follows previous
+			for (let j = 1; j < length; j++) {
+				const prevIdx = offset + (j - 1) * POINT_SIZE;
+				const idx = offset + j * POINT_SIZE;
+				let px2 = points.current![idx + 0];
+				let py2 = points.current![idx + 1];
+				let vx2 = points.current![idx + 2];
+				let vy2 = points.current![idx + 3];
+				const tx2 = points.current![prevIdx + 0];
+				const ty2 = points.current![prevIdx + 1];
+				let dx2 = tx2 - px2;
+				let dy2 = ty2 - py2;
+				vx2 += dx2 * FOLLOW_FORCE * 0.012;
+				vy2 += dy2 * FOLLOW_FORCE * 0.012;
+				vx2 *= DAMPING;
+				vy2 *= DAMPING;
+				px2 += vx2;
+				py2 += vy2;
+				points.current![idx + 0] = px2;
+				points.current![idx + 1] = py2;
+				points.current![idx + 2] = vx2;
+				points.current![idx + 3] = vy2;
+			}
+
+			// Draw thread
+			ctx.save();
+			ctx.beginPath();
+			ctx.moveTo(points.current![headIdx + 0], points.current![headIdx + 1]);
+			for (let j = 1; j < length; j++) {
+				const idx = offset + j * POINT_SIZE;
+				ctx.lineTo(points.current![idx + 0], points.current![idx + 1]);
+			}
+			ctx.strokeStyle = `hsl(${hue}, 90%, 60%)`;
+			ctx.lineWidth = threadWidth;
+			ctx.globalAlpha = 0.18;
+			ctx.stroke();
+			ctx.restore();
+		});
+	}
 
 	useEffect(() => {
-		window.setFps ??= () => {};
 		const canvas = canvasRef.current;
 		if (!canvas) return;
-		const context = canvas.getContext("2d");
-		if (!context) return;
+		let width = window.innerWidth;
+		let height = window.innerHeight;
+		canvas.width = width;
+		canvas.height = height;
+		initialize(width, height);
 
-		// Calculate total points
-		const totalPoints = THREAD_COUNT * SEGMENT_COUNT;
-		let buffer: SharedArrayBuffer | ArrayBuffer;
-		if (typeof window !== "undefined" && typeof window.SharedArrayBuffer !== "undefined") {
-			buffer = new window.SharedArrayBuffer(totalPoints * POINT_SIZE * 4);
-		} else {
-			buffer = new ArrayBuffer(totalPoints * POINT_SIZE * 4);
+		// Mouse move handler
+		function handleMove(e: MouseEvent) {
+			cursor.current.x = e.clientX;
+			cursor.current.y = e.clientY;
+			cursor.current.moved = true;
 		}
-		const shared = new Float32Array(buffer);
-		sharedRef.current = shared;
+		window.addEventListener("mousemove", handleMove);
 
-		// Worker setup (Turbopack compatibility: use new URL)
-		const worker = new Worker(workerUrl, { type: "module" });
-		workerRef.current = worker;
-		const sendConfig = () => {
-			worker.postMessage({
-				type: 'INIT',
-				buffer,
-				config: {
-					THREAD_COUNT,
-					SEGMENT_COUNT,
-					FOLLOW_FORCE,
-					DAMPING,
-					CONSTRAINT_ITERATIONS,
-					SEGMENT_LENGTH,
-					BUNDLE_RADIUS,
-					SPREAD_SENSITIVITY,
-					MIN_SEGMENTS,
-					width: window.innerWidth,
-					height: window.innerHeight,
-				},
-			});
-		};
-		sendConfig();
+		// Resize handler
+		function handleResize() {
+			width = window.innerWidth;
+			height = window.innerHeight;
+			canvas.width = width;
+			canvas.height = height;
+			initialize(width, height);
+		}
+		window.addEventListener("resize", handleResize);
 
-		// Resize logic
-		const resize = () => {
-			const { innerWidth, innerHeight, devicePixelRatio } = window;
-			canvas.width = innerWidth * devicePixelRatio;
-			canvas.height = innerHeight * devicePixelRatio;
-			canvas.style.width = `${innerWidth}px`;
-			canvas.style.height = `${innerHeight}px`;
-			context.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-			worker.postMessage({ type: 'RESIZE', width: innerWidth, height: innerHeight });
-		};
-		resize();
-		window.addEventListener("resize", resize);
-
-		// Pointer events
-		const pointerHandler = (e: PointerEvent) => {
-			worker.postMessage({ type: 'POINTER', x: e.clientX, y: e.clientY, active: true });
-		};
-		const pointerLeave = () => {
-			worker.postMessage({ type: 'POINTER', x: 0, y: 0, active: false });
-		};
-		window.addEventListener("pointermove", pointerHandler);
-		window.addEventListener("pointerdown", pointerHandler);
-		window.addEventListener("pointerleave", pointerLeave);
-
-		// Render loop: just draw from shared memory
-		const render = () => {
-			animationRef.current = requestAnimationFrame(render);
-			context.globalCompositeOperation = "destination-in";
-			context.fillStyle = "rgba(172, 38, 38, 0)";
-			context.fillRect(0, 0, canvas.width, canvas.height);
-			context.globalCompositeOperation = "lighter";
-			context.lineCap = "round";
-			context.lineJoin = "round";
-			// Draw all threads
-			let offset = 0;
-			for (let t = 0; t < THREAD_COUNT; t++) {
-				context.strokeStyle = `hsla(${Math.random() * 15}, 100%, 20%, 1)`;
-				context.beginPath();
-				context.moveTo(shared[offset], shared[offset + 1]);
-				for (let s = 1; s < SEGMENT_COUNT; s++) {
-					const idx = offset + s * POINT_SIZE;
-					context.lineTo(shared[idx], shared[idx + 1]);
-				}
-				context.stroke();
-				offset += SEGMENT_COUNT * POINT_SIZE;
-			}
-		};
-		render();
+		// Animation loop
+		function loop() {
+			animate(width, height);
+			animationRef.current = requestAnimationFrame(loop);
+		}
+		animationRef.current = requestAnimationFrame(loop);
 
 		return () => {
+			window.removeEventListener("mousemove", handleMove);
+			window.removeEventListener("resize", handleResize);
 			if (animationRef.current) cancelAnimationFrame(animationRef.current);
-			window.removeEventListener("resize", resize);
-			window.removeEventListener("pointermove", pointerHandler);
-			window.removeEventListener("pointerdown", pointerHandler);
-			window.removeEventListener("pointerleave", pointerLeave);
-			worker.terminate();
 		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	return (
-		<>
-			<canvas
-				ref={canvasRef}
-				className="pointer-events-none fixed inset-0 z-0 h-full w-full"
-				aria-hidden="true"
-			/>
-		</>
+		<canvas
+			ref={canvasRef}
+			className="pointer-events-none fixed inset-0 z-0 h-full w-full"
+			aria-hidden="true"
+		/>
 	);
 }

@@ -21,8 +21,20 @@ const allura = Allura({
 });
 
 export const metadata: Metadata = {
-  title: "TedxTIST",
-  description: "TedxTIST Edition 2",
+  title: 'TEDxTIST Edition 2',
+  description: 'Clarity in Chaos - Join us on March 18th, 2026.',
+  openGraph: {
+    title: 'TEDxTIST Edition 2',
+    description: 'Clarity in Chaos - Join us on March 18th, 2026.',
+    images: [
+      {
+        url: 'https://tedxtist.in/banner.jpg', // Absolute URL is required
+        width: 1200,
+        height: 630,
+        alt: 'TEDxTIST Edition 2 Banner',
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
