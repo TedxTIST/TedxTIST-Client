@@ -7,7 +7,7 @@ import Image from "next/image";
 import CTAHeroButtons from "./components/CTAHeroButtons";
 import Carousel from "./components/Carousel";
 import SpeakerSection from "./components/SpeakerSection";
-import TicketsSection from "./components/TicketsSection";
+// import TicketsSection from "./components/TicketsSection";
 
 export default function Home() {
   return (
@@ -157,10 +157,8 @@ export default function Home() {
       </section>
 
 
-      {/* Tickets Section */}
-      <TicketsSection />
-
-
+      {/* Tickets Section
+      <TicketsSection /> */}
 
 
       {/* Sponsors Section */}
