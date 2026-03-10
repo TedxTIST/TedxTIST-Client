@@ -7,12 +7,7 @@ export default function TicketsSection() {
   return (
     <section
       id="tickets"
-      // UPDATED: The viewport breakout trick forces the section to absolute screen edges
-      className="relative flex min-h-screen flex-col md:flex-row items-center justify-between overflow-hidden w-[100vw] shrink-0"
-      style={{
-        marginLeft: "calc(50% - 50vw)",
-        marginRight: "calc(50% - 50vw)"
-      }}
+      className="tickets-breakout relative min-h-screen grid grid-cols-1 md:grid-cols-2 items-center overflow-hidden w-full"
     >
       {/* Left: Text and Buttons */}
       {/* UPDATED: We moved the global left padding (pl-[...]) here so the text stays aligned with your other sections */}

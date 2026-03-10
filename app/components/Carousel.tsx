@@ -164,6 +164,7 @@ export default function Carousel() {
       }
     };
 
+    // We must use { passive: false } because we call e.preventDefault() to enable custom scroll behavior.
     container.addEventListener("wheel", handleWheel, { passive: false });
 
     return () => {

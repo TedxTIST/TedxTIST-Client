@@ -17,13 +17,14 @@ export default function Home() {
         id="home"
         className="relative flex min-h-screen items-center justify-end px-[clamp(1.5rem,5vw,6rem)]"
       >
-         {/* X background image restored with next/image and blur placeholder */}
+
+        {/* X background image restored with next/image and blur placeholder, moved after LCP content for better LCP */}
         <Image
           src="/X.png"
           alt="Background X"
           fill
-          className="fixed top-0 left-0 w-full h-full object-contain pointer-events-none select-none"
-          priority
+          className="fixed top-0 left-0 w-full h-full object-contain object-left pointer-events-none select-none"
+          priority={false}
           placeholder="blur"
           blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/w8AAn8B9nQn2wAAAABJRU5ErkJggg=="
         />

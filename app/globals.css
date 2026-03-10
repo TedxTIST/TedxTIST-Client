@@ -1,3 +1,68 @@
+/* Utility for full-bleed breakout section */
+.tickets-breakout {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+/* Button radial glow effect using CSS variables */
+.glow-effect {
+  width: 120px;
+  height: 120px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, #eb0028 0%, transparent 80%);
+  pointer-events: none;
+  transform: translate(calc(var(--glow-x, 50%) - 60px), calc(var(--glow-y, 50%) - 60px));
+  transition: opacity 0.2s;
+  opacity: 0;
+}
+/* SpeakerSection scroll-driven fade and transform */
+.speaker-fade {
+  /* These will be set by JS via --scroll-progress on the container */
+  --fade-zone: 0.15;
+  --per-speaker: calc(1 / 10); /* 10 speakers, update if count changes */
+  --speaker-index: 0; /* JS can set this if needed */
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+}
+
+#speakers {
+  /* JS sets --scroll-progress */
+}
+
+#speakers .speaker-fade {
+  /* Calculate per-speaker progress and fade using CSS only */
+  /* This is a simplified version; for more complex logic, use a CSS Houdini Paint Worklet */
+  opacity: calc(
+    max(
+      0,
+      min(
+        1,
+        (
+          (
+            (var(--scroll-progress, 0) - var(--speaker-index, 0) * var(--per-speaker, 0.1)) /
+            var(--per-speaker, 0.1)
+          ) < var(--fade-zone, 0.15)
+            ? (
+                (var(--scroll-progress, 0) - var(--speaker-index, 0) * var(--per-speaker, 0.1)) /
+                (var(--fade-zone, 0.15) * var(--per-speaker, 0.1))
+              )
+            : (
+                (1 - (
+                  (var(--scroll-progress, 0) - var(--speaker-index, 0) * var(--per-speaker, 0.1)) /
+                  var(--per-speaker, 0.1)
+                )) /
+                (var(--fade-zone, 0.15) * var(--per-speaker, 0.1))
+              )
+        )
+      )
+    )
+  );
+  transform: translateY(calc((1 - opacity) * 12px));
+}
 @import "tailwindcss";
 
 :root {

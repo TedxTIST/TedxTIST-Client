@@ -2,6 +2,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
+// Code-split: FluidCursorBackground is only loaded on desktop with WebGL support
 const FluidCursorBackground = dynamic(() => import("./FluidCursorBackground"), { ssr: false });
 
 function isWebGLSupported() {
@@ -21,6 +22,7 @@ export default function ConditionalFluidCursorBackground() {
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
+    // Only enable on desktop with WebGL support
     const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;
     setEnabled(isWebGLSupported() && !isMobile);
   }, []);

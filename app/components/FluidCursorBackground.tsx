@@ -3,24 +3,20 @@
 import { useEffect, useRef } from "react";
 // import FPSCounter from "./FPSCounter";
 
-type ThreadPoint = {
-	x: number;
-	y: number;
-	vx: number;
-	vy: number;
-};
 
-type Thread = {
-	points: ThreadPoint[];
-	width: number;
-	hue: number;
-	driftX: number;
-	driftY: number;
-	targetOffsetX: number;
-	targetOffsetY: number;
-	/** Initial head position along the stroke — used as idle fallback goal */
-	initX: number;
-	initY: number;
+// Each thread's points are stored in a contiguous Float32Array.
+// For each point: [x, y, vx, vy]
+type ThreadPool = {
+  offset: number; // start index in the pool
+  length: number; // number of segments
+  width: number;
+  hue: number;
+  driftX: number;
+  driftY: number;
+  targetOffsetX: number;
+  targetOffsetY: number;
+  initX: number;
+  initY: number;
 };
 
 declare global {
@@ -54,11 +50,13 @@ const DAMPING = 0.84;
 const MAX_SPEED = 100;
 const CONSTRAINT_ITERATIONS = 20;
 const BUNDLE_RADIUS = 60;
-const SPREAD_SENSITIVITY = 12; // NEW: Tune this to change the pinch responsiveness
+const SPREAD_SENSITIVITY = 12;
+const POINT_SIZE = 4; // [x, y, vx, vy]
 
 export default function FluidCursorBackground() {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
-	const threadsRef = useRef<Thread[]>([]);
+	const threadPoolsRef = useRef<ThreadPool[]>([]);
+	const poolRef = useRef<Float32Array | null>(null);
 	const cursorRef = useRef({ x: 0, y: 0, active: false });
 	const animationRef = useRef<number | null>(null);
 	const lastMoveRef = useRef({ x: 0, y: 0, time: 0 });
@@ -86,76 +84,68 @@ export default function FluidCursorBackground() {
 		// Seed threads along a curved stroke matching the reference X sweep.
 		const initializeThreads = () => {
 			const { innerWidth, innerHeight } = window;
+			const p0x = innerWidth * 1.10,  p0y = innerHeight * 0.38;
+			const p1x = innerWidth * 0.38,  p1y = innerHeight * 0.42;
+			const p2x = innerWidth * -0.12, p2y = innerHeight * 0.75;
 
-			// Quadratic bezier: P0 (right entry) → P1 (X convergence) → P2 (left exit).
-			// Threads are bundled tight on the right and fan out toward the bottom-left.
-			const p0x = innerWidth * 1.10,  p0y = innerHeight * 0.38;  // right, ~40% height
-			const p1x = innerWidth * 0.38,  p1y = innerHeight * 0.42;  // X center convergence
-			const p2x = innerWidth * -0.12, p2y = innerHeight * 0.75;  // exit bottom-left
-
-
-			// Reusable vector objects for bezier math
-			const bezierVec = { x: 0, y: 0 };
-			const tangentVec = { x: 0, y: 0 };
-
-			// Evaluate quadratic bezier at parameter t, writing to bezierVec
-			const bezier = (t: number) => {
+			// Helper: Write bezier result directly to arr at idx
+			function bezierTo(arr: Float32Array, idx: number, t: number) {
 				const u = 1 - t;
-				bezierVec.x = u * u * p0x + 2 * u * t * p1x + t * t * p2x;
-				bezierVec.y = u * u * p0y + 2 * u * t * p1y + t * t * p2y;
-				return bezierVec;
-			};
-			// Tangent (first derivative) at parameter t, writing to tangentVec
-			const bezierTangent = (t: number) => {
+				arr[idx] = u * u * p0x + 2 * u * t * p1x + t * t * p2x;
+				arr[idx + 1] = u * u * p0y + 2 * u * t * p1y + t * t * p2y;
+			}
+			// Helper: Write tangent result directly to arr at idx
+			function bezierTangentTo(arr: Float32Array, idx: number, t: number) {
 				const u = 1 - t;
-				tangentVec.x = 2 * u * (p1x - p0x) + 2 * t * (p2x - p1x);
-				tangentVec.y = 2 * u * (p1y - p0y) + 2 * t * (p2y - p1y);
-				return tangentVec;
-			};
+				arr[idx] = 2 * u * (p1x - p0x) + 2 * t * (p2x - p1x);
+				arr[idx + 1] = 2 * u * (p1y - p0y) + 2 * t * (p2y - p1y);
+			}
 
-			threadsRef.current = Array.from({ length: THREAD_COUNT }, () => {
-				// t=0 is right (entry), t=1 is left (exit).
+			// Precompute total points needed
+			let totalPoints = 0;
+			const threadSegments: number[] = [];
+			for (let i = 0; i < THREAD_COUNT; i++) {
+				const segmentCount = MIN_SEGMENTS + Math.floor(Math.random() * (SEGMENT_COUNT - MIN_SEGMENTS + 1));
+				threadSegments.push(segmentCount);
+				totalPoints += segmentCount;
+			}
+			const pool = new Float32Array(totalPoints * POINT_SIZE);
+			const threadPools: ThreadPool[] = [];
+			let offset = 0;
+			for (let i = 0; i < THREAD_COUNT; i++) {
+				const segmentCount = threadSegments[i];
 				const t = Math.random();
-				const { x: strokeX, y: strokeY } = bezier(t);
-				const { x: tx, y: ty } = bezierTangent(t);
+				// Stroke position
+				bezierTo(pool, offset * POINT_SIZE, t);
+				const strokeX = pool[offset * POINT_SIZE];
+				const strokeY = pool[offset * POINT_SIZE + 1];
+				// Tangent
+				bezierTangentTo(pool, offset * POINT_SIZE + 2, t);
+				const tx = pool[offset * POINT_SIZE + 2];
+				const ty = pool[offset * POINT_SIZE + 3];
 				const tangentLen = Math.hypot(tx, ty) || 1;
-
-				// Perpendicular to the curve at this point.
 				const perpX = -ty / tangentLen;
 				const perpY = tx / tangentLen;
-
-				// Spread widens from right→left: tight at t≈0, wide at t≈1.
 				const spreadRadius = 20 + t * t * 200;
 				const spread = (Math.random() - 0.5) * spreadRadius;
 				const startX = strokeX + perpX * spread;
 				const startY = strokeY + perpY * spread;
-
-				// Local stroke angle for segment layout & drift.
 				const localAngle = Math.atan2(ty, tx);
 				const jitter = (Math.random() - 0.5) * 0.4;
 				const driftAngle = localAngle + jitter;
-
-				const segmentCount =
-					MIN_SEGMENTS + Math.floor(Math.random() * (SEGMENT_COUNT - MIN_SEGMENTS + 1));
-				const points: ThreadPoint[] = [];
-
 				const offsetRadius = Math.random() * BUNDLE_RADIUS;
 				const offsetTheta = Math.random() * Math.PI * 2;
-
-				// Lay segments trailing in the opposite direction of the tangent.
-				// Preallocate and reuse ThreadPoint objects
-				for (let i = 0; i < segmentCount; i += 1) {
-					// Use a single object pool for points
-					const pt = { x: 0, y: 0, vx: 0, vy: 0 };
-					pt.x = startX - Math.cos(localAngle) * i * SEGMENT_LENGTH;
-					pt.y = startY - Math.sin(localAngle) * i * SEGMENT_LENGTH;
-					pt.vx = 0;
-					pt.vy = 0;
-					points.push(pt);
+				// Lay segments
+				for (let j = 0; j < segmentCount; j++) {
+					const idx = (offset + j) * POINT_SIZE;
+					pool[idx] = startX - Math.cos(localAngle) * j * SEGMENT_LENGTH;
+					pool[idx + 1] = startY - Math.sin(localAngle) * j * SEGMENT_LENGTH;
+					pool[idx + 2] = 0;
+					pool[idx + 3] = 0;
 				}
-
-				return {
-					points,
+				threadPools.push({
+					offset,
+					length: segmentCount,
 					width: 5 + Math.random() * 2.5,
 					hue: Math.random() * 15,
 					driftX: Math.cos(driftAngle),
@@ -164,8 +154,11 @@ export default function FluidCursorBackground() {
 					targetOffsetY: Math.sin(offsetTheta) * offsetRadius,
 					initX: startX,
 					initY: startY,
-				};
-			});
+				});
+				offset += segmentCount;
+			}
+			poolRef.current = pool;
+			threadPoolsRef.current = threadPools;
 		};
 
 		const onPointerMove = (event: PointerEvent) => {
@@ -245,89 +238,83 @@ export default function FluidCursorBackground() {
 			const idleTime = performance.now() - lastMoveRef.current.time;
 			const idleFactor = idleTime > 180 ? Math.min((idleTime - 180) / 1200, 1) : 0;
 
-			for (let threadIdx = 0; threadIdx < threadsRef.current.length; threadIdx += 1) {
-				const thread = threadsRef.current[threadIdx];
-				const head = thread.points[0];
-
+			const pool = poolRef.current;
+			const threadPools = threadPoolsRef.current;
+			if (!pool || !threadPools) return;
+			for (let tIdx = 0; tIdx < threadPools.length; tIdx++) {
+				const thread = threadPools[tIdx];
+				const headIdx = thread.offset * POINT_SIZE;
 				// When cursor is active, threads converge on cursor + spread offset.
 				// When idle, each thread returns to its own stroke-position (initX/initY).
 				const goalX = active ? baseGoalX + thread.targetOffsetX * spreadFactor : thread.initX;
 				const goalY = active ? baseGoalY + thread.targetOffsetY * spreadFactor : thread.initY;
-				const threadGoalX = goalX;
-				const threadGoalY = goalY;
-
 				// Move head toward its unique target with minimal elasticity.
-				const dx = threadGoalX - head.x;
-				const dy = threadGoalY - head.y;
-				head.vx += dx * FOLLOW_FORCE * 0.01;
-				head.vy += dy * FOLLOW_FORCE * 0.01;
-
+				let dx = goalX - pool[headIdx];
+				let dy = goalY - pool[headIdx + 1];
+				pool[headIdx + 2] += dx * FOLLOW_FORCE * 0.01;
+				pool[headIdx + 3] += dy * FOLLOW_FORCE * 0.01;
 				// Add some random noise to the head's velocity for a more organic, fluid motion.
-				head.vx += (Math.random() - 0.5) * 0.3;
-				head.vy += (Math.random() - 0.5) * 0.3;
-
-				// Apply damping to slow down the head over time, creating a natural decay of motion.
-				head.vx *= DAMPING;
-				head.vy *= DAMPING;
-
-				// Cap the head's speed to prevent erratic behavior during fast cursor movements.
-				const speed = Math.hypot(head.vx, head.vy);
+				pool[headIdx + 2] += (Math.random() - 0.5) * 0.3;
+				pool[headIdx + 3] += (Math.random() - 0.5) * 0.3;
+				// Apply damping
+				pool[headIdx + 2] *= DAMPING;
+				pool[headIdx + 3] *= DAMPING;
+				// Cap speed
+				const speed = Math.hypot(pool[headIdx + 2], pool[headIdx + 3]);
 				if (speed > MAX_SPEED) {
-					head.vx = (head.vx / speed) * MAX_SPEED;
-					head.vy = (head.vy / speed) * MAX_SPEED;
+					pool[headIdx + 2] = (pool[headIdx + 2] / speed) * MAX_SPEED;
+					pool[headIdx + 3] = (pool[headIdx + 3] / speed) * MAX_SPEED;
 				}
-
-				head.x += head.vx;
-				head.y += head.vy;
-
+				pool[headIdx] += pool[headIdx + 2];
+				pool[headIdx + 1] += pool[headIdx + 3];
 				// Keep threads inside bounds by resetting when head drifts too far.
 				if (
-					head.x < -200 ||
-					head.x > innerWidth + 200 ||
-					head.y < -200 ||
-					head.y > innerHeight + 200
+					pool[headIdx] < -200 ||
+					pool[headIdx] > innerWidth + 200 ||
+					pool[headIdx + 1] < -200 ||
+					pool[headIdx + 1] > innerHeight + 200
 				) {
 					const angle = Math.random() * Math.PI * 2;
-					head.x = threadGoalX + Math.cos(angle) * 40;
-					head.y = threadGoalY + Math.sin(angle) * 40;
-					for (let i = 1; i < thread.points.length; i += 1) {
-						thread.points[i].x = head.x - Math.cos(angle) * i * SEGMENT_LENGTH;
-						thread.points[i].y = head.y - Math.sin(angle) * i * SEGMENT_LENGTH;
-						thread.points[i].vx = 0;
-						thread.points[i].vy = 0;
+					pool[headIdx] = goalX + Math.cos(angle) * 40;
+					pool[headIdx + 1] = goalY + Math.sin(angle) * 40;
+					for (let i = 1; i < thread.length; i++) {
+						const idx = (thread.offset + i) * POINT_SIZE;
+						pool[idx] = pool[headIdx] - Math.cos(angle) * i * SEGMENT_LENGTH;
+						pool[idx + 1] = pool[headIdx + 1] - Math.sin(angle) * i * SEGMENT_LENGTH;
+						pool[idx + 2] = 0;
+						pool[idx + 3] = 0;
 					}
 				}
-
-				// Apply fixed-length constraints (no elasticity).
-				for (let iteration = 0; iteration < CONSTRAINT_ITERATIONS; iteration += 1) {
-					for (let i = 1; i < thread.points.length; i += 1) {
-						const prev = thread.points[i - 1];
-						const point = thread.points[i];
-						const segDx = point.x - prev.x;
-						const segDy = point.y - prev.y;
+				// Apply fixed-length constraints
+				for (let iteration = 0; iteration < CONSTRAINT_ITERATIONS; iteration++) {
+					for (let i = 1; i < thread.length; i++) {
+						const prevIdx = (thread.offset + i - 1) * POINT_SIZE;
+						const idx = (thread.offset + i) * POINT_SIZE;
+						const segDx = pool[idx] - pool[prevIdx];
+						const segDy = pool[idx + 1] - pool[prevIdx + 1];
 						const distance = Math.hypot(segDx, segDy) || 1;
 						const scale = SEGMENT_LENGTH / distance;
-						point.x = prev.x + segDx * scale;
-						point.y = prev.y + segDy * scale;
+						pool[idx] = pool[prevIdx] + segDx * scale;
+						pool[idx + 1] = pool[prevIdx + 1] + segDy * scale;
 					}
 				}
-
-				// When idle, gently push non-head segments outward to separate threads slightly.
+				// When idle, gently push non-head segments outward
 				if (idleFactor > 0) {
-					const lengthFactor = Math.min(MIN_SEGMENTS / thread.points.length, 30);
+					const lengthFactor = Math.min(MIN_SEGMENTS / thread.length, 30);
 					const driftStrength = 0.09 * idleFactor * lengthFactor;
-					for (let i = 1; i < thread.points.length; i += 1) {
-						thread.points[i].x += thread.driftX * driftStrength;
-						thread.points[i].y += thread.driftY * driftStrength;
+					for (let i = 1; i < thread.length; i++) {
+						const idx = (thread.offset + i) * POINT_SIZE;
+						pool[idx] += thread.driftX * driftStrength;
+						pool[idx + 1] += thread.driftY * driftStrength;
 					}
 				}
-
-				// Draw a thread-like stroke (no glow); add a subtle shadow and keep a future texture hook.
+				// Draw
 				context.strokeStyle = `hsla(${thread.hue}, 100%, 20%, 1)`;
 				context.beginPath();
-				context.moveTo(thread.points[0].x, thread.points[0].y);
-				for (let i = 1; i < thread.points.length; i += 1) {
-					context.lineTo(thread.points[i].x, thread.points[i].y);
+				context.moveTo(pool[headIdx], pool[headIdx + 1]);
+				for (let i = 1; i < thread.length; i++) {
+					const idx = (thread.offset + i) * POINT_SIZE;
+					context.lineTo(pool[idx], pool[idx + 1]);
 				}
 				context.stroke();
 			}

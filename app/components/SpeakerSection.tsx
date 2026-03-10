@@ -83,64 +83,32 @@ const speakers: Speaker[] = [
 
 export default function SpeakerSection() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const currentIndexRef = useRef(0);
-  const progressRef = useRef(0);
-  const [, forceUpdate] = useState(0); // Only for speaker change
-
+  const [currentIndex, setCurrentIndex] = useState(0);
   useEffect(() => {
-    let ticking = false;
+    const container = containerRef.current;
+    if (!container) return;
     const handleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          const container = containerRef.current;
-          if (!container) return;
-          const rect = container.getBoundingClientRect();
-          const containerTop = -rect.top;
-          const scrollableHeight = container.scrollHeight - window.innerHeight;
-          if (scrollableHeight <= 0) return;
-          const rawProgress = Math.max(0, Math.min(1, containerTop / scrollableHeight));
-          const index = Math.min(
-            speakers.length - 1,
-            Math.floor(rawProgress * speakers.length)
-          );
-          // Only force React update if speaker changes
-          if (currentIndexRef.current !== index) {
-            currentIndexRef.current = index;
-            forceUpdate((n) => n + 1);
-          }
-          progressRef.current = rawProgress;
-          ticking = false;
-        });
-        ticking = true;
-      }
+      const rect = container.getBoundingClientRect();
+      const containerTop = -rect.top;
+      const scrollableHeight = container.scrollHeight - window.innerHeight;
+      if (scrollableHeight <= 0) return;
+      const rawProgress = Math.max(0, Math.min(1, containerTop / scrollableHeight));
+      container.style.setProperty('--scroll-progress', rawProgress.toString());
+      // Calculate index for speaker change
+      const index = Math.min(
+        speakers.length - 1,
+        Math.floor(rawProgress * speakers.length)
+      );
+      setCurrentIndex(index);
     };
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-
-
-  const currentIndex = currentIndexRef.current;
-  const progress = progressRef.current;
   const speaker = speakers[currentIndex];
 
-  // Calculate per-speaker progress (0-1) for the active speaker
-  const perSpeaker = 1 / speakers.length;
-  const speakerLocalProgress =
-    (progress - currentIndex * perSpeaker) / perSpeaker;
-  // Fade in at start, fade out at end of each speaker's scroll segment
-  const fadeZone = 0.15;
-  let opacity = 1;
-  if (speakerLocalProgress < fadeZone) {
-    opacity = speakerLocalProgress / fadeZone;
-  } else if (speakerLocalProgress > 1 - fadeZone) {
-    opacity = (1 - speakerLocalProgress) / fadeZone;
-  }
-  // Clamp and ensure first/last are fully visible at boundaries
-  if (currentIndex === 0 && progress < perSpeaker * fadeZone) opacity = 1;
-  if (currentIndex === speakers.length - 1 && progress > 1 - perSpeaker * fadeZone) opacity = 1;
-  opacity = Math.max(0, Math.min(1, opacity));
+  // CSS handles opacity/transform via --scroll-progress
 
   return (
     <div
@@ -171,12 +139,7 @@ export default function SpeakerSection() {
 
         {/* Speaker Content — crossfade based on scroll */}
         <div
-          className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:gap-16"
-          style={{
-            opacity,
-            transform: `translateY(${(1 - opacity) * 12}px)`,
-            transition: "opacity 0.15s ease-out, transform 0.15s ease-out",
-          }}
+          className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:gap-16 speaker-fade"
         >
           {/* Top on mobile, Left on desktop: Name + Bio */}
           <div className="order-1 flex flex-col flex-1 min-w-0 md:w-1/2">
