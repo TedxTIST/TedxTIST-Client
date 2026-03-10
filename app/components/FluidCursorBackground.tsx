@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-// @ts-ignore
-import CursorWorker from "./cursor.worker.ts?worker";
+
 // import FPSCounter from "./FPSCounter";
 
 
@@ -56,6 +55,9 @@ const SPREAD_SENSITIVITY = 12;
 const POINT_SIZE = 4; // [x, y, vx, vy]
 
 export default function FluidCursorBackground() {
+			// Debug: log workerUrl
+			const workerUrl = new URL("./cursor.worker.ts", import.meta.url);
+			console.log("[FluidCursorBackground] workerUrl:", workerUrl);
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const animationRef = useRef<number | null>(null);
 	const workerRef = useRef<Worker | null>(null);
@@ -70,12 +72,17 @@ export default function FluidCursorBackground() {
 
 		// Calculate total points
 		const totalPoints = THREAD_COUNT * SEGMENT_COUNT;
-		const buffer = new SharedArrayBuffer(totalPoints * POINT_SIZE * 4);
+		let buffer: SharedArrayBuffer | ArrayBuffer;
+		if (typeof window !== "undefined" && typeof window.SharedArrayBuffer !== "undefined") {
+			buffer = new window.SharedArrayBuffer(totalPoints * POINT_SIZE * 4);
+		} else {
+			buffer = new ArrayBuffer(totalPoints * POINT_SIZE * 4);
+		}
 		const shared = new Float32Array(buffer);
 		sharedRef.current = shared;
 
-		// Worker setup
-		const worker = new CursorWorker();
+		// Worker setup (Turbopack compatibility: use new URL)
+		const worker = new Worker(workerUrl, { type: "module" });
 		workerRef.current = worker;
 		const sendConfig = () => {
 			worker.postMessage({
