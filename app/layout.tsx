@@ -3,7 +3,6 @@ import { Allura, Geist, Geist_Mono } from "next/font/google";
 import ConditionalFluidCursorBackground from "./components/ConditionalFluidCursorBackground";
 import Image from "next/image";
 import Header from "./components/Header";
-import ThemeToggle from "./components/ThemeToggle";
 import "./globals.css";
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,13 +31,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth dark">
+    <html lang="en" className="scroll-smooth dark" data-theme="dark">
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${allura.variable} antialiased relative dark bg-black`}
       >
-       
         <ConditionalFluidCursorBackground />
         <Header />
+        {/* ThemeToggle removed to enforce dark mode */}
         <div className="relative z-10">{children}</div>
       </body>
     </html>
