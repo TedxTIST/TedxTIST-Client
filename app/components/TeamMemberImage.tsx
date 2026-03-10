@@ -19,7 +19,7 @@ export default function TeamMemberImage({ src, name, priority = false, sizes = "
         fill
         sizes={sizes}
         className={`object-cover object-center grayscale transition-all duration-700 ease-in-out ${isLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105"}`}
-        onLoadingComplete={() => setIsLoaded(true)}
+        onLoad={() => setIsLoaded(true)}
         decoding="async"
         priority={priority}
         draggable={false}
