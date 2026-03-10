@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 
-export default function TeamMemberImage({ src, name, priority = false, sizes = "(max-width: 768px) 75vw, 25vw" }: { src: string; name: string; priority?: boolean; sizes?: string }) {
+export default function TeamMemberImage({ src, name, priority = false, sizes = "(max-width: 768px) 75vw, 312px" }: { src: string; name: string; priority?: boolean; sizes?: string }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
   return (

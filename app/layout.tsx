@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Allura, Geist, Geist_Mono } from "next/font/google";
-import ConditionalFluidCursorBackground from "./components/ConditionalFluidCursorBackground";
-import Image from "next/image";
+import CursorWrapper from "./components/CursorWrapper"; 
 import Header from "./components/Header";
 import "./globals.css";
+
+// 1. Define the fonts (These were missing or unreachable)
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
     description: 'Clarity in Chaos - Join us on March 18th, 2026.',
     images: [
       {
-        url: 'https://tedxtist.in/banner.jpg', // Absolute URL is required
+        url: 'https://tedxtist.in/banner.jpg',
         width: 1200,
         height: 630,
         alt: 'TEDxTIST Edition 2 Banner',
@@ -44,13 +45,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth dark" data-theme="dark">
+      <head>
+        <link rel="preconnect" href="https://tedxtist.in" />
+      </head>
+      {/* 2. Variables are now correctly defined and accessible here */}
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${allura.variable} antialiased relative dark bg-black`}
       >
-        <ConditionalFluidCursorBackground />
+        <CursorWrapper />
         <Header />
-        {/* ThemeToggle removed to enforce dark mode */}
-        <div className="relative z-10">{children}</div>
+        <main className="relative z-10">
+          {children}
+        </main>
       </body>
     </html>
   );

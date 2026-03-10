@@ -190,7 +190,7 @@ const Card = ({ slide, idx, isActive, dimensions, onClick }: CardProps) => {
         src={slide.image}
         name={slide.name}
         priority={idx < 3}
-        sizes="(max-width: 768px) 75vw, 25vw"
+        sizes={`(max-width: 768px) 75vw, ${Math.round(dimensions.width)}px`}
       />
       {/* Fluid Text Overlay */}
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-red-900/90 via-red-600/50 to-transparent px-[clamp(1rem,1.5vw,1.25rem)] pb-[clamp(1.5rem,2vw,1.75rem)] pt-[clamp(2rem,3vw,3rem)] mt-auto">
