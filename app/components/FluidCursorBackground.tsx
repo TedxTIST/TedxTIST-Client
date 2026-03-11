@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 
-// Exact constants from your reference
 const CONSTANTS = {
   THREAD_COUNT: 300,
   MIN_SEGMENTS: 8,
@@ -14,7 +13,7 @@ const CONSTANTS = {
   CONSTRAINT_ITERATIONS: 20,
   BUNDLE_RADIUS: 60,
   SPREAD_SENSITIVITY: 12,
-  POINT_SIZE: 20,
+  POINT_SIZE: 4, // Corrected from 20 to match x, y, vx, vy
 };
 
 export default function FluidCursorBackground() {
@@ -32,64 +31,49 @@ export default function FluidCursorBackground() {
     const worker = new Worker(new URL("./cursor.worker.ts", import.meta.url));
     workerRef.current = worker;
 
-    // --- BEZIER INITIALIZATION FROM REFERENCE ---
     const { innerWidth: iw, innerHeight: ih } = window;
-    const p0x = iw * 1.1, p0y = ih * 0.38;
-    const p1x = iw * 0.38, p1y = ih * 0.42;
-    const p2x = iw * -0.12, p2y = ih * 0.75;
-
     const threadData = [];
     let totalPoints = 0;
-    const segmentsArr: number[] = [];
 
+    // Seeding logic
     for (let i = 0; i < CONSTANTS.THREAD_COUNT; i++) {
-      const len = CONSTANTS.MIN_SEGMENTS + Math.floor(Math.random() * (CONSTANTS.SEGMENT_COUNT - CONSTANTS.MIN_SEGMENTS + 1));
-      segmentsArr.push(len);
-      totalPoints += len;
-    }
+      const length = CONSTANTS.MIN_SEGMENTS + Math.floor(Math.random() * (CONSTANTS.SEGMENT_COUNT - CONSTANTS.MIN_SEGMENTS + 1));
+      const t = i / CONSTANTS.THREAD_COUNT;
+      const angle = t * Math.PI * 0.5;
+      const radius = (iw * 0.5) + (Math.sin(t * Math.PI) * 100);
 
-    const poolData = new Float32Array(totalPoints * CONSTANTS.POINT_SIZE);
-    let offset = 0;
+      const startX = iw * 0.8 - Math.cos(angle) * radius;
+      const startY = ih * 0.2 + Math.sin(angle) * radius;
 
-    for (let i = 0; i < CONSTANTS.THREAD_COUNT; i++) {
-      const t = Math.random();
-      const u = 1 - t;
-      const strokeX = (u * u * p0x + 2 * u * t * p1x + t * t * p2x) * dpr;
-      const strokeY = (u * u * p0y + 2 * u * t * p1y + t * t * p2y) * dpr;
-      
-      const tx = (2 * u * (p1x - p0x) + 2 * t * (p2x - p1x)) * dpr;
-      const ty = (2 * u * (p1y - p0y) + 2 * t * (p2y - p1y)) * dpr;
-      const tangentLen = Math.hypot(tx, ty) || 1;
-      
-      const perpX = -ty / tangentLen;
-      const perpY = tx / tangentLen;
-      const spread = (Math.random() - 0.5) * (20 + t * t * 200) * dpr;
-      
-      const startX = strokeX + perpX * spread;
-      const startY = strokeY + perpY * spread;
-      const localAngle = Math.atan2(ty, tx);
-      const offsetRadius = Math.random() * CONSTANTS.BUNDLE_RADIUS * dpr;
       const offsetTheta = Math.random() * Math.PI * 2;
-
-      for (let j = 0; j < segmentsArr[i]; j++) {
-        const idx = (offset + j) * CONSTANTS.POINT_SIZE;
-        poolData[idx] = startX - Math.cos(localAngle) * j * CONSTANTS.SEGMENT_LENGTH * dpr;
-        poolData[idx + 1] = startY - Math.sin(localAngle) * j * CONSTANTS.SEGMENT_LENGTH * dpr;
-      }
+      const offsetRadius = Math.random() * CONSTANTS.BUNDLE_RADIUS;
 
       threadData.push({
-        offset,
-        length: segmentsArr[i],
-        hue: Math.random() * 15,
-        driftX: Math.cos(localAngle + (Math.random() - 0.5) * 0.4),
-        driftY: Math.sin(localAngle + (Math.random() - 0.5) * 0.4),
+        offset: totalPoints,
+        length,
+        hue: Math.random() * 15, // TEDx Red
+        driftX: Math.cos(angle),
+        driftY: Math.sin(angle),
         targetOffsetX: Math.cos(offsetTheta) * offsetRadius,
         targetOffsetY: Math.sin(offsetTheta) * offsetRadius,
         initX: startX,
         initY: startY,
       });
-      offset += segmentsArr[i];
+      totalPoints += length;
     }
+
+    const poolData = new Float32Array(totalPoints * CONSTANTS.POINT_SIZE);
+    
+    // Initial Layout in Pool
+    let currentOffset = 0;
+    threadData.forEach(thread => {
+      for (let j = 0; j < thread.length; j++) {
+        const idx = (currentOffset + j) * CONSTANTS.POINT_SIZE;
+        poolData[idx] = thread.initX;
+        poolData[idx + 1] = thread.initY;
+      }
+      currentOffset += thread.length;
+    });
 
     worker.postMessage({
       type: "INIT",
@@ -99,12 +83,13 @@ export default function FluidCursorBackground() {
       constants: CONSTANTS,
       width: iw * dpr,
       height: ih * dpr,
+      dpr: dpr
     }, [offscreen]);
 
     const handleMove = (e: PointerEvent) => {
       worker.postMessage({
         type: "UPDATE_CURSOR",
-        cursor: { x: e.clientX * dpr, y: e.clientY * dpr, active: true },
+        cursor: { x: e.clientX, y: e.clientY, active: true },
         timestamp: performance.now()
       });
     };
@@ -116,5 +101,11 @@ export default function FluidCursorBackground() {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 -z-10 h-full w-full" />;
+  return (
+    <canvas
+      ref={canvasRef}
+      className="pointer-events-none fixed inset-0 z-0 h-screen w-screen"
+      style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', zIndex: 0 }}
+    />
+  );
 }

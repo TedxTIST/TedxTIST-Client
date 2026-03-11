@@ -7,26 +7,32 @@ let cursor = { x: 0, y: 0, active: false };
 let constants: any = {};
 let lastMoveTime = performance.now();
 
-// Persistent physics state matching your reference
+// Persistent physics state
 let smoothedSpeed = 0;
 let spreadFactor = 1;
 let prevCursorX = 0;
 let prevCursorY = 0;
+let dpr = 1;
 
 self.onmessage = (e) => {
-  const { type, canvas, threadData, poolData, cursor: cursorData, width, height, constants: consts, timestamp } = e.data;
+  const { type, canvas, threadData, poolData, cursor: cursorData, width, height, constants: consts, timestamp, dpr: deviceDpr } = e.data;
   
   if (type === 'INIT') {
     ctx = canvas.getContext('2d');
     threads = threadData;
     pool = poolData;
-    if (width && height && ctx) {
+    constants = consts;
+    dpr = deviceDpr || 1;
+
+    if (ctx) {
       ctx.canvas.width = width;
       ctx.canvas.height = height;
+      // Scale context once so we can work in CSS pixels
+      ctx.scale(dpr, dpr);
     }
-    constants = consts;
-    prevCursorX = width * 0.5;
-    prevCursorY = height * 0.5;
+
+    prevCursorX = (width / dpr) * 0.5;
+    prevCursorY = (height / dpr) * 0.5;
     render();
   }
 
@@ -38,6 +44,7 @@ self.onmessage = (e) => {
   if (type === 'RESIZE' && ctx) {
     ctx.canvas.width = width;
     ctx.canvas.height = height;
+    ctx.scale(dpr, dpr);
   }
 };
 
@@ -55,16 +62,15 @@ function render() {
     SPREAD_SENSITIVITY,
   } = constants;
 
-  const { width, height } = ctx.canvas;
-
-  // Matching your reference's "destination-in" clear for that specific trail fade
+  // Clear logic matched to your reference
   ctx.globalCompositeOperation = "destination-in";
-  ctx.fillStyle = "rgba(172, 38, 38, 0)"; // Your specific alpha clear
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = "rgba(0, 0, 0, 0)"; 
+  ctx.fillRect(0, 0, ctx.canvas.width / dpr, ctx.canvas.height / dpr);
 
   ctx.globalCompositeOperation = "lighter";
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
+  ctx.lineWidth = 1.2;
 
   // --- PHYSICS SYNCED WITH REFERENCE ---
   const active = cursor.active;
@@ -89,16 +95,22 @@ function render() {
     const thread = threads[tIdx];
     const headIdx = thread.offset * POINT_SIZE;
 
-    const goalX = active ? baseGoalX + thread.targetOffsetX * spreadFactor : thread.initX;
-    const goalY = active ? baseGoalY + thread.targetOffsetY * spreadFactor : thread.initY;
+    // Movement Goal
+    let goalX = active ? baseGoalX + thread.targetOffsetX * spreadFactor : pool[headIdx];
+    let goalY = active ? baseGoalY + thread.targetOffsetY * spreadFactor : pool[headIdx + 1];
+
+    // Inject wind (drift)
+    const now = performance.now();
+    const windX = Math.sin(now * 0.001) * 0.5;
+    const windY = Math.cos(now * 0.001) * 0.5;
 
     // Head movement
     let dx = goalX - pool[headIdx];
     let dy = goalY - pool[headIdx + 1];
     pool[headIdx + 2] += dx * FOLLOW_FORCE * 0.01;
     pool[headIdx + 3] += dy * FOLLOW_FORCE * 0.01;
-    pool[headIdx + 2] += (Math.random() - 0.5) * 0.3;
-    pool[headIdx + 3] += (Math.random() - 0.5) * 0.3;
+    pool[headIdx + 2] += (Math.random() - 0.5) * 0.3 + windX;
+    pool[headIdx + 3] += (Math.random() - 0.5) * 0.3 + windY;
     pool[headIdx + 2] *= DAMPING;
     pool[headIdx + 3] *= DAMPING;
 
@@ -137,7 +149,7 @@ function render() {
     }
 
     // DRAWING
-    ctx.strokeStyle = `hsla(${thread.hue}, 100%, 20%, 1)`;
+    ctx.strokeStyle = `hsla(${thread.hue}, 100%, 30%, 0.6)`;
     ctx.beginPath();
     ctx.moveTo(pool[headIdx], pool[headIdx + 1]);
     for (let i = 1; i < thread.length; i++) {

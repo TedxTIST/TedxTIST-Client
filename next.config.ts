@@ -1,34 +1,31 @@
-import type { NextConfig } from "next";
+/**
+ * Security headers for CSP and HSTS
+ */
+const securityHeaders = [
+  {
+    key: 'Content-Security-Policy',
+    value: "default-src 'self'; img-src 'self' https: data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:; child-src 'self' blob:; connect-src *;"
+  },
+  {
+    key: 'Strict-Transport-Security',
+    value: 'max-age=63072000; includeSubDomains; preload'
+  }
+];
 
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+
+const nextConfig = {
+  images: {
+    qualities: [70, 75],
+  },
   async headers() {
     return [
       {
-        // Enable SharedArrayBuffer for all routes
-        source: "/:path*",
-        headers: [
-          {
-            key: "Cross-Origin-Opener-Policy",
-            value: "same-origin",
-          },
-          {
-            key: "Cross-Origin-Embedder-Policy",
-            value: "require-corp",
-          },
-        ],
-      },
-      {
-        // Cache all speaker images for 1 year (immutable static assets)
-        source: "/speakers/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=172800, immutable",
-          },
-        ],
+        source: '/(.*)',
+        headers: securityHeaders,
       },
     ];
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

@@ -49,20 +49,26 @@ function Carousel() {
     if (!container) return;
     const cards = Array.from(container.querySelectorAll<HTMLElement>(".carousel-card"));
     if (!cards.length) return;
+    // Batch all DOM reads first
     const containerRect = container.getBoundingClientRect();
     const containerCenter = containerRect.left + containerRect.width / 2;
+    // Collect all card centers in a single read loop
+    const cardCenters = cards.map(card => {
+      const cardRect = card.getBoundingClientRect();
+      return cardRect.left + cardRect.width / 2;
+    });
+    // Now process to find the closest
     let minDist = Infinity;
     let closestIdx = 0;
-    cards.forEach((card, idx) => {
-      const cardRect = card.getBoundingClientRect();
-      const cardCenter = cardRect.left + cardRect.width / 2;
+    cardCenters.forEach((cardCenter, idx) => {
       const dist = Math.abs(cardCenter - containerCenter);
       if (dist < minDist) {
         minDist = dist;
         closestIdx = idx;
       }
     });
-    setActiveIndex(closestIdx);
+    // DOM write/state update after all reads
+    requestAnimationFrame(() => setActiveIndex(closestIdx));
   }, []);
 
   useEffect(() => {
@@ -126,18 +132,32 @@ function Carousel() {
         </div>
       </div>
       {/* Pagination Dots */}
-      <div className="mt-[clamp(1rem,2vw,1.5rem)] flex flex-wrap items-center justify-center gap-[clamp(0.25rem,0.5vw,0.5rem)] max-w-[90%] md:max-w-[80%]">
-        {slides.map((slide, idx) => (
-          <button
-            key={slide.id}
-            onClick={() => scrollToCard(idx)}
-            aria-label={`Go to slide ${idx + 1}`}
-            className={`rounded-full border focus:outline-none transition-all duration-200 ${idx === activeIndex
-              ? "h-[clamp(0.6rem,1vw,0.875rem)] w-[clamp(0.6rem,1vw,0.875rem)] border-red-500/80 bg-gradient-to-b from-red-500 to-red-900 shadow-[0_0_10px_rgba(220,38,38,0.6)]"
-              : "h-[clamp(0.4rem,0.75vw,0.625rem)] w-[clamp(0.4rem,0.75vw,0.625rem)] border-red-800/70 bg-gradient-to-b from-red-900/70 to-black hover:bg-red-800/50"
-            }`}
-          />
-        ))}
+      <div
+        className="mt-[clamp(1rem,2vw,1.5rem)] flex-nowrap flex overflow-x-auto items-center justify-center gap-[clamp(0.25rem,0.5vw,0.5rem)] max-w-full scrollbar-hide"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
+        {slides.map((slide, idx) => {
+          // Responsive dot size: smaller on small screens, only active dot is larger
+          // Use clamp for CSS sizing: inactive = min 9px, preferred 2.5vw, max 20px; active = min 20px, preferred 4vw, max 32px
+          const inactiveSize = 'clamp(9px, 2.5vw, 12px)';
+          const activeSize = 'clamp(12px, 4vw, 20px)';
+          const size = idx === activeIndex ? activeSize : inactiveSize;
+          return (
+            <button
+              key={slide.id}
+              onClick={() => scrollToCard(idx)}
+              aria-label={`Go to slide ${idx + 1}`}
+              tabIndex={0}
+              className={`rounded-full border focus:outline-none transition-all duration-200 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black
+                ${idx === activeIndex
+                  ? "border-red-500/80 bg-gradient-to-b from-red-500 to-red-900 shadow-[0_0_10px_rgba(220,38,38,0.6)]"
+                  : "border-red-800/70 bg-gradient-to-b from-red-900/70 to-black hover:bg-red-800/50"
+                }`
+              }
+              style={{ minWidth: size, minHeight: size, width: size, height: size, padding: 0 }}
+            />
+          );
+        })}
       </div>
     </div>
   );

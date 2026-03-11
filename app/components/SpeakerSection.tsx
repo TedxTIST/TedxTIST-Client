@@ -13,11 +13,14 @@ function SpeakerImage({ src, alt, priority = false }: { src: string; alt: string
     <Image
       src={src}
       alt={alt}
-      width={400}
-      height={400}
+      width={450}
+      height={562}
       priority={priority}
+      quality={70}
+      sizes="(max-width: 600px) 90vw, 450px"
       className="h-full w-full object-cover object-top grayscale rounded-2xl"
       loading={priority ? "eager" : "lazy"}
+      style={{ height: "auto" }}
     />
   );
 }
@@ -88,18 +91,22 @@ export default function SpeakerSection() {
     const container = containerRef.current;
     if (!container) return;
     const handleScroll = () => {
+      // Batch all DOM reads first
       const rect = container.getBoundingClientRect();
       const containerTop = -rect.top;
       const scrollableHeight = container.scrollHeight - window.innerHeight;
       if (scrollableHeight <= 0) return;
       const rawProgress = Math.max(0, Math.min(1, containerTop / scrollableHeight));
-      container.style.setProperty('--scroll-progress', rawProgress.toString());
-      // Calculate index for speaker change
-      const index = Math.min(
-        speakers.length - 1,
-        Math.floor(rawProgress * speakers.length)
-      );
-      setCurrentIndex(index);
+      // Now perform DOM writes
+      requestAnimationFrame(() => {
+        container.style.setProperty('--scroll-progress', rawProgress.toString());
+        // Calculate index for speaker change
+        const index = Math.min(
+          speakers.length - 1,
+          Math.floor(rawProgress * speakers.length)
+        );
+        setCurrentIndex(index);
+      });
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();

@@ -6,7 +6,7 @@ export const revalidate = 600; // 10 minutes
 import Image from "next/image";
 import CTAHeroButtons from "./components/CTAHeroButtons";
 import Carousel from "./components/Carousel";
-import SpeakerSection from "./components/SpeakerSection";
+import DynamicSpeakerSection from "./components/DynamicSpeakerSection";
 // import TicketsSection from "./components/TicketsSection";
 
 export default function Home() {
@@ -24,7 +24,9 @@ export default function Home() {
           alt="Background X"
           fill
           className="fixed top-0 left-0 w-full h-full object-contain object-left pointer-events-none select-none"
-          priority={false}
+          priority={true}
+          fetchPriority="high"
+          sizes="(max-width: 1465px) 100vw, 1465px"
           placeholder="blur"
           blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/w8AAn8B9nQn2wAAAABJRU5ErkJggg=="
         />
@@ -136,10 +138,12 @@ export default function Home() {
           <Image
             src="/TIST-main-block.png"
             alt="TIST Campus"
-            width={1920}
-            height={1080}
+            width={1200}
+            height={675}
             priority
-            sizes="(max-width: 600px) 100vw, (max-width: 1200px) 80vw, 60vw"
+            quality={70}
+            fetchPriority="high"
+            sizes="(max-width: 600px) 100vw, (max-width: 1200px) 80vw, 1200px"
             className="w-[100vw] max-w-none h-full object-cover object-bottom grayscale md:w-full md:max-w-full"
             style={{ left: '50%', transform: 'translateX(-50%)', position: 'relative' }}
           />
@@ -154,9 +158,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Speakers Section */}
+      {/* Speakers Section - Now safely lazy-loaded */}
       <section>
-        <SpeakerSection />
+        <DynamicSpeakerSection />
       </section>
 
 

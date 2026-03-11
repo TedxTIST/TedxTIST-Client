@@ -45,13 +45,17 @@ export default function Button({
   // Use CSS variable for glow position
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
+      // Batch DOM read
       const rect = e.currentTarget.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       setPos({ x, y });
+      // Batch DOM write in rAF
       if (btnRef.current) {
-        btnRef.current.style.setProperty('--glow-x', `${x}px`);
-        btnRef.current.style.setProperty('--glow-y', `${y}px`);
+        requestAnimationFrame(() => {
+          btnRef.current?.style.setProperty('--glow-x', `${x}px`);
+          btnRef.current?.style.setProperty('--glow-y', `${y}px`);
+        });
       }
       onMouseMove?.(e);
     },
