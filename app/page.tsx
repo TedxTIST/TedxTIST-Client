@@ -7,6 +7,7 @@ import Image from "next/image";
 import CTAHeroButtons from "./components/CTAHeroButtons";
 import Carousel from "./components/Carousel";
 import DynamicSpeakerSection from "./components/DynamicSpeakerSection";
+import Footer from "./components/Footer";
 // import TicketsSection from "./components/TicketsSection";
 
 export default function Home() {
@@ -192,6 +193,9 @@ export default function Home() {
           <Carousel />
         </div>
       </section>
+
+      {/* Footer */}
+      <Footer />
     </>
   );
 }
