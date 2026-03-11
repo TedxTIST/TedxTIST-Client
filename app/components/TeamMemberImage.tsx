@@ -17,7 +17,8 @@ export default function TeamMemberImage({ src, name, priority = false, sizes = "
         src={src}
         alt={name}
         fill
-        sizes={sizes}
+        // Highly specific sizes for responsive images
+        sizes="(max-width: 768px) 300px, 450px"
         className={`object-cover object-center grayscale transition-all duration-700 ease-in-out ${isLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105"}`}
         onLoad={() => setIsLoaded(true)}
         decoding="async"

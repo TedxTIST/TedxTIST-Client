@@ -1,4 +1,5 @@
 
+export const dynamic = "force-static";
 // Enable ISR: Regenerate this page every 600 seconds
 export const revalidate = 600; // 10 minutes
 

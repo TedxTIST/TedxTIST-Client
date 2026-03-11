@@ -17,7 +17,8 @@ function SpeakerImage({ src, alt, priority = false }: { src: string; alt: string
       height={562}
       priority={priority}
       quality={70}
-      sizes="(max-width: 600px) 90vw, 450px"
+      // Highly specific sizes for responsive images
+      sizes="(max-width: 768px) 300px, 450px"
       className="h-full w-full object-cover object-top grayscale rounded-2xl"
       loading={priority ? "eager" : "lazy"}
     />
