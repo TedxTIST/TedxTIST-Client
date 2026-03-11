@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const CONSTANTS = {
   THREAD_COUNT: 300,
@@ -10,71 +10,61 @@ const CONSTANTS = {
   FOLLOW_FORCE: 2,
   DAMPING: 0.84,
   MAX_SPEED: 100,
-  CONSTRAINT_ITERATIONS: 20,
+  CONSTRAINT_ITERATIONS: 12, // Optimized for performance
   BUNDLE_RADIUS: 60,
   SPREAD_SENSITIVITY: 12,
-  POINT_SIZE: 4, // Corrected from 20 to match x, y, vx, vy
+  POINT_SIZE: 4, // FIXED: Matches [x, y, vx, vy] memory layout
 };
 
 export default function FluidCursorBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const workerRef = useRef<Worker | null>(null);
-  const hasTransferred = useRef(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    if (!canvasRef.current || hasTransferred.current) return;
-    const canvas = canvasRef.current;
-    hasTransferred.current = true;
-    
-    const dpr = window.devicePixelRatio || 1;
-    const offscreen = canvas.transferControlToOffscreen();
-    const worker = new Worker(new URL("./cursor.worker.ts", import.meta.url));
-    workerRef.current = worker;
+    setIsMounted(true);
+  }, []);
 
+  useEffect(() => {
+    if (!isMounted || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2); // Cap for performance
     const { innerWidth: iw, innerHeight: ih } = window;
+
+    // Use try/catch to handle double-mount in dev environments
+    let offscreen: OffscreenCanvas;
+    try {
+      offscreen = canvas.transferControlToOffscreen();
+    } catch (e) {
+      return; // Already transferred
+    }
+
+    const worker = new Worker(new URL("./cursor.worker.ts", import.meta.url));
+    
+    // Seed the physics pool
     const threadData = [];
     let totalPoints = 0;
-
-    // Seeding logic
     for (let i = 0; i < CONSTANTS.THREAD_COUNT; i++) {
       const length = CONSTANTS.MIN_SEGMENTS + Math.floor(Math.random() * (CONSTANTS.SEGMENT_COUNT - CONSTANTS.MIN_SEGMENTS + 1));
       const t = i / CONSTANTS.THREAD_COUNT;
       const angle = t * Math.PI * 0.5;
       const radius = (iw * 0.5) + (Math.sin(t * Math.PI) * 100);
 
-      const startX = iw * 0.8 - Math.cos(angle) * radius;
-      const startY = ih * 0.2 + Math.sin(angle) * radius;
-
-      const offsetTheta = Math.random() * Math.PI * 2;
-      const offsetRadius = Math.random() * CONSTANTS.BUNDLE_RADIUS;
-
       threadData.push({
         offset: totalPoints,
         length,
-        hue: Math.random() * 15, // TEDx Red
-        driftX: Math.cos(angle),
-        driftY: Math.sin(angle),
-        targetOffsetX: Math.cos(offsetTheta) * offsetRadius,
-        targetOffsetY: Math.sin(offsetTheta) * offsetRadius,
-        initX: startX,
-        initY: startY,
+        hue: Math.random() * 15,
+        targetOffsetX: Math.cos(Math.random() * Math.PI * 2) * (Math.random() * CONSTANTS.BUNDLE_RADIUS),
+        targetOffsetY: Math.sin(Math.random() * Math.PI * 2) * (Math.random() * CONSTANTS.BUNDLE_RADIUS),
+        initX: iw * 0.8 - Math.cos(angle) * radius,
+        initY: ih * 0.2 + Math.sin(angle) * radius,
       });
       totalPoints += length;
     }
 
     const poolData = new Float32Array(totalPoints * CONSTANTS.POINT_SIZE);
-    
-    // Initial Layout in Pool
-    let currentOffset = 0;
-    threadData.forEach(thread => {
-      for (let j = 0; j < thread.length; j++) {
-        const idx = (currentOffset + j) * CONSTANTS.POINT_SIZE;
-        poolData[idx] = thread.initX;
-        poolData[idx + 1] = thread.initY;
-      }
-      currentOffset += thread.length;
-    });
 
+    // ZERO-COPY TRANSFER: Transfer buffer ownership to save memory
     worker.postMessage({
       type: "INIT",
       canvas: offscreen,
@@ -83,8 +73,8 @@ export default function FluidCursorBackground() {
       constants: CONSTANTS,
       width: iw * dpr,
       height: ih * dpr,
-      dpr: dpr
-    }, [offscreen]);
+      dpr
+    }, [offscreen, poolData.buffer]);
 
     const handleMove = (e: PointerEvent) => {
       worker.postMessage({
@@ -99,13 +89,12 @@ export default function FluidCursorBackground() {
       window.removeEventListener("pointermove", handleMove);
       worker.terminate();
     };
-  }, []);
+  }, [isMounted]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="pointer-events-none fixed inset-0 z-0 h-screen w-screen"
-      style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', zIndex: 0 }}
+    <canvas 
+      ref={canvasRef} 
+      className="pointer-events-none fixed inset-0 -z-10 h-full w-full bg-black" 
     />
   );
 }

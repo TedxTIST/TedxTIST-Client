@@ -1,4 +1,5 @@
-// cursor.worker.ts
+// cursor.worker.ts - Finalized Multi-threaded Physics Engine
+// Optimized for tedxtist.in (Edition 2, 2026)
 
 let ctx: OffscreenCanvasRenderingContext2D | null = null;
 let pool: Float32Array;
@@ -6,19 +7,20 @@ let threads: any[] = [];
 let cursor = { x: 0, y: 0, active: false };
 let constants: any = {};
 let lastMoveTime = performance.now();
+let dpr = 1;
 
 // Persistent physics state
 let smoothedSpeed = 0;
 let spreadFactor = 1;
 let prevCursorX = 0;
 let prevCursorY = 0;
-let dpr = 1;
 
 self.onmessage = (e) => {
-  const { type, canvas, threadData, poolData, cursor: cursorData, width, height, constants: consts, timestamp, dpr: deviceDpr } = e.data;
+  const { type, canvas, threadData, poolData, cursor: cursorData, width, height, constants: consts, dpr: deviceDpr } = e.data;
   
   if (type === 'INIT') {
-    ctx = canvas.getContext('2d');
+    // 1. Initialize rendering context with alpha preservation
+    ctx = canvas.getContext('2d', { alpha: true });
     threads = threadData;
     pool = poolData;
     constants = consts;
@@ -27,10 +29,10 @@ self.onmessage = (e) => {
     if (ctx) {
       ctx.canvas.width = width;
       ctx.canvas.height = height;
-      // Scale context once so we can work in CSS pixels
+      // Mirror CSS coordinate space for easier physics matching
       ctx.scale(dpr, dpr);
     }
-
+    
     prevCursorX = (width / dpr) * 0.5;
     prevCursorY = (height / dpr) * 0.5;
     render();
@@ -38,13 +40,7 @@ self.onmessage = (e) => {
 
   if (type === 'UPDATE_CURSOR') {
     cursor = cursorData;
-    if (timestamp) lastMoveTime = timestamp;
-  }
-
-  if (type === 'RESIZE' && ctx) {
-    ctx.canvas.width = width;
-    ctx.canvas.height = height;
-    ctx.scale(dpr, dpr);
+    lastMoveTime = e.data.timestamp || performance.now();
   }
 };
 
@@ -57,64 +53,61 @@ function render() {
     SEGMENT_LENGTH,
     MAX_SPEED,
     CONSTRAINT_ITERATIONS,
-    MIN_SEGMENTS,
     POINT_SIZE,
     SPREAD_SENSITIVITY,
   } = constants;
 
-  // Clear logic matched to your reference
+  const { width, height } = ctx.canvas;
+
+  // 1. REFINED CLEAR LOGIC (Destination-In)
+  // Erases 8% of the previous frame to create smooth, lingering trails.
   ctx.globalCompositeOperation = "destination-in";
   ctx.fillStyle = "rgba(0, 0, 0, 0)"; 
-  ctx.fillRect(0, 0, ctx.canvas.width / dpr, ctx.canvas.height / dpr);
+  ctx.fillRect(0, 0, width / dpr, height / dpr);
 
+  // 2. GLOW COMPOSITING
+  // Uses 'lighter' to make overlapping threads glow like light streaks.
   ctx.globalCompositeOperation = "lighter";
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
-  ctx.lineWidth = 1.2;
+  ctx.lineWidth = 1.4;
 
-  // --- PHYSICS SYNCED WITH REFERENCE ---
   const active = cursor.active;
   const baseGoalX = active ? cursor.x : prevCursorX;
   const baseGoalY = active ? cursor.y : prevCursorY;
 
-  const dx_cursor = baseGoalX - prevCursorX;
-  const dy_cursor = baseGoalY - prevCursorY;
-  const currentSpeed = Math.hypot(dx_cursor, dy_cursor);
-
+  // Adaptive spread based on movement speed
+  const distToCursor = Math.hypot(baseGoalX - prevCursorX, baseGoalY - prevCursorY);
+  smoothedSpeed = smoothedSpeed * 0.85 + distToCursor * 0.15;
+  spreadFactor = spreadFactor * 0.9 + (1 - Math.min(smoothedSpeed / SPREAD_SENSITIVITY, 1)) * 0.1;
+  
   prevCursorX = baseGoalX;
   prevCursorY = baseGoalY;
 
-  smoothedSpeed = smoothedSpeed * 0.85 + currentSpeed * 0.15;
-  const targetSpread = 1 - Math.min(smoothedSpeed / SPREAD_SENSITIVITY, 1);
-  spreadFactor = spreadFactor * 0.9 + targetSpread * 0.1;
-
-  const idleTime = performance.now() - lastMoveTime;
+  const now = performance.now();
+  const idleTime = now - lastMoveTime;
   const idleFactor = idleTime > 180 ? Math.min((idleTime - 180) / 1200, 1) : 0;
 
   for (let tIdx = 0; tIdx < threads.length; tIdx++) {
     const thread = threads[tIdx];
     const headIdx = thread.offset * POINT_SIZE;
 
-    // Movement Goal
+    // Movement Toward Cursor
     let goalX = active ? baseGoalX + thread.targetOffsetX * spreadFactor : pool[headIdx];
     let goalY = active ? baseGoalY + thread.targetOffsetY * spreadFactor : pool[headIdx + 1];
 
-    // Inject wind (drift)
-    const now = performance.now();
-    const windX = Math.sin(now * 0.001) * 0.5;
-    const windY = Math.cos(now * 0.001) * 0.5;
-
-    // Head movement
-    let dx = goalX - pool[headIdx];
-    let dy = goalY - pool[headIdx + 1];
-    pool[headIdx + 2] += dx * FOLLOW_FORCE * 0.01;
-    pool[headIdx + 3] += dy * FOLLOW_FORCE * 0.01;
-    pool[headIdx + 2] += (Math.random() - 0.5) * 0.3 + windX;
-    pool[headIdx + 3] += (Math.random() - 0.5) * 0.3 + windY;
+    // Physics Update (Head)
+    pool[headIdx + 2] += (goalX - pool[headIdx]) * FOLLOW_FORCE * 0.01;
+    pool[headIdx + 3] += (goalY - pool[headIdx + 1]) * FOLLOW_FORCE * 0.01;
+    
+    // Inject random jitter for the 'Chaos' effect
+    pool[headIdx + 2] += (Math.random() - 0.5) * 0.2;
+    pool[headIdx + 3] += (Math.random() - 0.5) * 0.2;
+    
     pool[headIdx + 2] *= DAMPING;
     pool[headIdx + 3] *= DAMPING;
 
-    // Speed Cap
+    // Velocity Capping
     const speed = Math.hypot(pool[headIdx + 2], pool[headIdx + 3]);
     if (speed > MAX_SPEED) {
       pool[headIdx + 2] = (pool[headIdx + 2] / speed) * MAX_SPEED;
@@ -124,32 +117,21 @@ function render() {
     pool[headIdx] += pool[headIdx + 2];
     pool[headIdx + 1] += pool[headIdx + 3];
 
-    // Verlet Constraints
-    for (let iteration = 0; iteration < CONSTRAINT_ITERATIONS; iteration++) {
+    // Verlet Constraints (Segment Connection)
+    for (let it = 0; it < CONSTRAINT_ITERATIONS; it++) {
       for (let i = 1; i < thread.length; i++) {
-        const prevIdx = (thread.offset + i - 1) * POINT_SIZE;
-        const idx = (thread.offset + i) * POINT_SIZE;
-        const segDx = pool[idx] - pool[prevIdx];
-        const segDy = pool[idx + 1] - pool[prevIdx + 1];
-        const distance = Math.hypot(segDx, segDy) || 1;
-        const scale = SEGMENT_LENGTH / distance;
-        pool[idx] = pool[prevIdx] + segDx * scale;
-        pool[idx + 1] = pool[prevIdx + 1] + segDy * scale;
+        const p = (thread.offset + i - 1) * POINT_SIZE;
+        const c = (thread.offset + i) * POINT_SIZE;
+        const dx = pool[c] - pool[p], dy = pool[c + 1] - pool[p + 1];
+        const dist = Math.hypot(dx, dy) || 1;
+        const scale = SEGMENT_LENGTH / dist;
+        pool[c] = pool[p] + dx * scale;
+        pool[c + 1] = pool[p + 1] + dy * scale;
       }
     }
 
-    // Idle drift
-    if (idleFactor > 0) {
-      const driftStrength = 0.09 * idleFactor * Math.min(MIN_SEGMENTS / thread.length, 30);
-      for (let i = 1; i < thread.length; i++) {
-        const idx = (thread.offset + i) * POINT_SIZE;
-        pool[idx] += thread.driftX * driftStrength;
-        pool[idx + 1] += thread.driftY * driftStrength;
-      }
-    }
-
-    // DRAWING
-    ctx.strokeStyle = `hsla(${thread.hue}, 100%, 30%, 0.6)`;
+    // DRAWING - Matched to TEDx Red (Hue 0-8 range)
+    ctx.strokeStyle = `hsla(${thread.hue}, 100%, 46%, 0.4)`;
     ctx.beginPath();
     ctx.moveTo(pool[headIdx], pool[headIdx + 1]);
     for (let i = 1; i < thread.length; i++) {

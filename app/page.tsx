@@ -37,7 +37,21 @@ export default function Home() {
           <h1 className="text-[clamp(3rem,6vw,6rem)] font-bold leading-tight tracking-tight text-white">
             Clarity in
             <br />
-            <span className="font-[family-name:var(--font-allura)] text-red-600">Chaos</span>
+            <span
+              className="font-[family-name:var(--font-allura)] text-red-600"
+              style={{
+                textShadow:
+                  '0 0 24px rgba(31, 9, 9, 0.7), 0 0 12px rgba(0,0,0,0.9), 0 0 2px #470f0f',
+                background:
+                  'radial-gradient(circle, rgba(220,38,38,0.25) 0%, transparent 70%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'currentcolor',
+                MozBackgroundClip: 'text',
+                // Removed MozTextFillColor to fix TS error
+              }}
+            >
+              Chaos
+            </span>
           </h1>
 
           <p className="mt-[clamp(1rem,2vh,2rem)] text-[clamp(1rem,1.5vw,1.125rem)] text-white/60">
