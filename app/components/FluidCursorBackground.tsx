@@ -2,18 +2,19 @@
 
 import { useEffect, useRef, useState } from "react";
 
+// EXTRACTED: Exactly matching your provided physics profile
 const CONSTANTS = {
   THREAD_COUNT: 300,
   MIN_SEGMENTS: 8,
   SEGMENT_COUNT: 50,
-  SEGMENT_LENGTH: 20,
-  FOLLOW_FORCE: 2,
-  DAMPING: 0.84,
+  SEGMENT_LENGTH: 20, // From your file
+  FOLLOW_FORCE: 2,    // From your file
+  DAMPING: 0.84,      // From your file
   MAX_SPEED: 100,
-  CONSTRAINT_ITERATIONS: 12, // Optimized for performance
+  CONSTRAINT_ITERATIONS: 12,
   BUNDLE_RADIUS: 60,
   SPREAD_SENSITIVITY: 12,
-  POINT_SIZE: 4, // FIXED: Matches [x, y, vx, vy] memory layout
+  POINT_SIZE: 4, 
 };
 
 export default function FluidCursorBackground() {
@@ -28,22 +29,20 @@ export default function FluidCursorBackground() {
     if (!isMounted || !canvasRef.current) return;
 
     const canvas = canvasRef.current;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2); // Cap for performance
+    const dpr = Math.min(window.devicePixelRatio || 1, 2); 
     const { innerWidth: iw, innerHeight: ih } = window;
 
-    // Use try/catch to handle double-mount in dev environments
     let offscreen: OffscreenCanvas;
     try {
       offscreen = canvas.transferControlToOffscreen();
     } catch (e) {
-      return; // Already transferred
+      return; 
     }
 
     const worker = new Worker(new URL("./cursor.worker.ts", import.meta.url));
-    
-    // Seed the physics pool
     const threadData = [];
     let totalPoints = 0;
+
     for (let i = 0; i < CONSTANTS.THREAD_COUNT; i++) {
       const length = CONSTANTS.MIN_SEGMENTS + Math.floor(Math.random() * (CONSTANTS.SEGMENT_COUNT - CONSTANTS.MIN_SEGMENTS + 1));
       const t = i / CONSTANTS.THREAD_COUNT;
@@ -53,6 +52,7 @@ export default function FluidCursorBackground() {
       threadData.push({
         offset: totalPoints,
         length,
+        // Using your original red hue range
         hue: Math.random() * 15,
         targetOffsetX: Math.cos(Math.random() * Math.PI * 2) * (Math.random() * CONSTANTS.BUNDLE_RADIUS),
         targetOffsetY: Math.sin(Math.random() * Math.PI * 2) * (Math.random() * CONSTANTS.BUNDLE_RADIUS),
@@ -64,7 +64,6 @@ export default function FluidCursorBackground() {
 
     const poolData = new Float32Array(totalPoints * CONSTANTS.POINT_SIZE);
 
-    // ZERO-COPY TRANSFER: Transfer buffer ownership to save memory
     worker.postMessage({
       type: "INIT",
       canvas: offscreen,
