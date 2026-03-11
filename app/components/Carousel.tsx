@@ -1,8 +1,6 @@
 "use client";
 
-
-import { useState, useRef, useEffect, useCallback, memo } from "react";
-
+import { useState, useRef, useEffect, memo } from "react";
 import teamData from "./team.json";
 import TeamMemberImage from "./TeamMemberImage";
 
@@ -13,14 +11,19 @@ type Slide = {
   image: string;
 };
 
-
 function Carousel() {
   const slides: Slide[] = teamData;
   const [activeIndex, setActiveIndex] = useState(0);
   const [dimensions, setDimensions] = useState({ width: 312, height: 390, gap: 36 });
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Responsive sizing
+  // Safely track activeIndex for wheel logic without triggering re-renders inside the event listener
+  const activeIndexRef = useRef(activeIndex);
+  useEffect(() => {
+    activeIndexRef.current = activeIndex;
+  }, [activeIndex]);
+
+  // Responsive sizing (Preserved exactly from your original code)
   useEffect(() => {
     const handleResize = () => {
       const vw = window.innerWidth;
@@ -41,60 +44,112 @@ function Carousel() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const paddingOffset = dimensions.width / 2;
-
-  // Center detection for active card
-  const updateActiveIndex = useCallback(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-    const cards = Array.from(container.querySelectorAll<HTMLElement>(".carousel-card"));
-    if (!cards.length) return;
-    // Batch all DOM reads first
-    const containerRect = container.getBoundingClientRect();
-    const containerCenter = containerRect.left + containerRect.width / 2;
-    // Collect all card centers in a single read loop
-    const cardCenters = cards.map(card => {
-      const cardRect = card.getBoundingClientRect();
-      return cardRect.left + cardRect.width / 2;
-    });
-    // Now process to find the closest
-    let minDist = Infinity;
-    let closestIdx = 0;
-    cardCenters.forEach((cardCenter, idx) => {
-      const dist = Math.abs(cardCenter - containerCenter);
-      if (dist < minDist) {
-        minDist = dist;
-        closestIdx = idx;
-      }
-    });
-    // DOM write/state update after all reads
-    requestAnimationFrame(() => setActiveIndex(closestIdx));
-  }, []);
-
+  // 1. DUAL-AXIS WHEEL BRIDGE (Fixes Skipping & Restores Scroll Up/Down)
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
-    updateActiveIndex();
-    container.addEventListener("scroll", updateActiveIndex, { passive: true });
-    window.addEventListener("resize", updateActiveIndex);
-    return () => {
-      container.removeEventListener("scroll", updateActiveIndex);
-      window.removeEventListener("resize", updateActiveIndex);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dimensions, updateActiveIndex]);
 
-  // Scroll to card on dot/click
+    let wheelAccumulator = 0;
+    let isScrolling = false;
+    let scrollTimeout: NodeJS.Timeout;
+
+    const handleWheel = (e: WheelEvent) => {
+      // Support both horizontal swiping (trackpads) and vertical scrolling (mice)
+      const isHorizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY);
+      const delta = isHorizontal ? e.deltaX : e.deltaY;
+
+      const currentIdx = activeIndexRef.current;
+      const isScrollingBackwards = delta < 0; // Up or Left
+      const isScrollingForwards = delta > 0;  // Down or Right
+
+      const atStart = currentIdx === 0 && isScrollingBackwards;
+      const atEnd = currentIdx === slides.length - 1 && isScrollingForwards;
+
+      // If we are at the edges and trying to scroll outwards, release control to the browser.
+      // This solves the "trapped" feeling and lets you scroll up/down the page.
+      if (atStart || atEnd) {
+        wheelAccumulator = 0;
+        return;
+      }
+
+      // We are inside the carousel. Lock native scroll to prevent 2-3 card jumping.
+      e.preventDefault();
+
+      if (isScrolling) {
+        wheelAccumulator = 0; // Drain trackpad momentum while animating
+        return;
+      }
+
+      wheelAccumulator += delta;
+
+      // Threshold of 40 requires a deliberate scroll, ignoring tiny accidental trackpad brushes
+      if (Math.abs(wheelAccumulator) > 40) {
+        const direction = wheelAccumulator > 0 ? 1 : -1;
+        wheelAccumulator = 0;
+
+        const nextIndex = currentIdx + direction;
+
+        if (nextIndex >= 0 && nextIndex < slides.length) {
+          isScrolling = true;
+
+          const card = container.querySelector(`[data-index="${nextIndex}"]`) as HTMLElement;
+          if (card) {
+            card.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+          }
+
+          // Lock out wheel commands just long enough for the CSS slide transition to finish
+          clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(() => {
+            isScrolling = false;
+          }, 450); 
+        }
+      }
+    };
+
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      container.removeEventListener("wheel", handleWheel);
+      clearTimeout(scrollTimeout);
+    };
+  }, [slides.length]);
+
+  // 2. NATIVE CENTER DETECTION VIA INTERSECTION OBSERVER
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = Number(entry.target.getAttribute("data-index"));
+            setActiveIndex(index);
+          }
+        });
+      },
+      {
+        root: container,
+        threshold: 0, 
+        // Creates a 2% wide detection band exactly in the middle of the screen.
+        // This guarantees perfect center detection regardless of screen size.
+        rootMargin: "0px -49% 0px -49%" 
+      }
+    );
+
+    const cards = container.querySelectorAll(".carousel-card");
+    cards.forEach((card) => observer.observe(card));
+
+    return () => observer.disconnect();
+  }, [dimensions]);
+
   const scrollToCard = (idx: number) => {
     const container = scrollContainerRef.current;
     if (!container) return;
-    const card = container.querySelector(`[data-id="${slides[idx].id}"]`);
+    const card = container.querySelector(`[data-index="${idx}"]`);
     if (card && card instanceof HTMLElement) {
       card.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     }
   };
-
-
 
   return (
     <div
@@ -105,23 +160,24 @@ function Carousel() {
         className="relative flex items-center justify-center w-full transition-all duration-300"
         style={{ height: dimensions.height + 40 }}
       >
-        {/* Scroll Container */}
         <div
           ref={scrollContainerRef}
-          className="flex w-full overflow-x-auto snap-x snap-mandatory items-center h-full"
+          className="flex w-full overflow-x-auto snap-x snap-mandatory items-center h-full no-scrollbar"
           style={{
             scrollbarWidth: "none",
             msOverflowStyle: "none",
             gap: `${dimensions.gap}px`,
-            paddingLeft: `calc(50% - ${paddingOffset}px)`,
-            paddingRight: `calc(50% - ${paddingOffset}px)`,
+            // This CSS perfectly centers the first and last cards natively
+            paddingLeft: `calc(50vw - ${dimensions.width / 2}px)`,
+            paddingRight: `calc(50vw - ${dimensions.width / 2}px)`,
             touchAction: "pan-x"
           }}
         >
-          <style dangerouslySetInnerHTML={{ __html: `::-webkit-scrollbar { display: none; }` }} />
+          <style dangerouslySetInnerHTML={{ __html: `.no-scrollbar::-webkit-scrollbar { display: none; }` }} />
           {slides.map((slide, idx) => (
             <MemoCard
               key={slide.id}
+              data-index={idx} // Crucial for Intersection Observer and Wheel Targeting
               slide={slide}
               idx={idx}
               isActive={idx === activeIndex}
@@ -131,14 +187,13 @@ function Carousel() {
           ))}
         </div>
       </div>
+      
       {/* Pagination Dots */}
       <div
         className="mt-[clamp(1rem,2vw,1.5rem)] flex-nowrap flex overflow-x-auto items-center justify-center gap-[clamp(0.25rem,0.5vw,0.5rem)] max-w-full scrollbar-hide"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {slides.map((slide, idx) => {
-          // Responsive dot size: smaller on small screens, only active dot is larger
-          // Use clamp for CSS sizing: inactive = min 9px, preferred 2.5vw, max 20px; active = min 20px, preferred 4vw, max 32px
           const inactiveSize = 'clamp(9px, 2.5vw, 12px)';
           const activeSize = 'clamp(12px, 4vw, 20px)';
           const size = idx === activeIndex ? activeSize : inactiveSize;
@@ -170,15 +225,15 @@ type CardProps = {
   isActive: boolean;
   dimensions: { width: number; height: number; gap: number };
   onClick: () => void;
+  "data-index"?: number;
 };
 
-
-const Card = ({ slide, idx, isActive, dimensions, onClick }: CardProps) => {
-  // CSS variable for scale and grayscale
+const Card = ({ slide, idx, isActive, dimensions, onClick, ...props }: CardProps) => {
   const scale = isActive ? 1 : 0.85;
   const gray = isActive ? 0 : 1;
   return (
     <div
+      {...props}
       data-id={slide.id}
       onClick={onClick}
       style={{
@@ -190,7 +245,7 @@ const Card = ({ slide, idx, isActive, dimensions, onClick }: CardProps) => {
         zIndex: isActive ? 20 : 10,
         border: isActive ? "1.5px solid rgba(185,28,28,0.4)" : "1.5px solid transparent",
         boxShadow: isActive ? "0 30px 80px rgba(220,38,38,0.35)" : undefined,
-        transition: "transform 0.2s, filter 0.2s, box-shadow 0.2s, border 0.2s"
+        transition: "transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.4s, box-shadow 0.4s, border 0.4s"
       }}
       className={
         `carousel-card snap-center shrink-0 cursor-pointer rounded-[clamp(2rem,4vw,3rem)] overflow-hidden relative flex flex-col items-center focus:outline-none`
