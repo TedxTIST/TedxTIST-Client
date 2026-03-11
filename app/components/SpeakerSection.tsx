@@ -20,7 +20,6 @@ function SpeakerImage({ src, alt, priority = false }: { src: string; alt: string
       sizes="(max-width: 600px) 90vw, 450px"
       className="h-full w-full object-cover object-top grayscale rounded-2xl"
       loading={priority ? "eager" : "lazy"}
-      style={{ height: "auto" }}
     />
   );
 }
