@@ -181,21 +181,24 @@ export default function Home() {
       {/* Us Section */}
       <section
         id="us"
-        className="flex min-h-screen flex-col items-center justify-center px-[clamp(1.5rem,5vw,6rem)] pb-[clamp(2rem,5vh,4rem)] text-center w-full overflow-x-hidden"
+        className="relative flex min-h-screen flex-col items-center justify-center px-[clamp(1.5rem,5vw,6rem)] pb-0 text-center w-full overflow-x-hidden"
       >
-        <h2 className="mb-[clamp(0.5rem,1vh,1rem)] text-[clamp(2.5rem,5vw,4.5rem)] font-bold leading-tight text-red-600">
-          The Team
-        </h2>
-        <p className="mb-[clamp(1.5rem,3vh,2.5rem)] max-w-lg text-[clamp(1rem,1.5vw,1.125rem)] text-white/60">
-          The people behind TEDxTIST
-        </p>
-        <div className="w-full flex justify-center">
-          <Carousel />
+        <div className="flex-1 w-full flex flex-col items-center justify-center pb-[clamp(2rem,5vh,4rem)]">
+          <h2 className="mb-[clamp(0.5rem,1vh,1rem)] text-[clamp(2.5rem,5vw,4.5rem)] font-bold leading-tight text-red-600">
+            The Team
+          </h2>
+          <p className="mb-[clamp(1.5rem,3vh,2.5rem)] max-w-lg text-[clamp(1rem,1.5vw,1.125rem)] text-white/60">
+            The people behind TEDxTIST
+          </p>
+          <div className="w-full flex justify-center">
+            <Carousel />
+          </div>
+        </div>
+        {/* Footer visually part of Us Section, full width at bottom */}
+        <div className="w-full absolute left-0 right-0 bottom-0">
+          <Footer />
         </div>
       </section>
-
-      {/* Footer */}
-      <Footer />
     </>
   );
 }

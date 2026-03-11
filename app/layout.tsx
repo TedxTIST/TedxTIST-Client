@@ -47,6 +47,8 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth dark" data-theme="dark">
       <head>
         <link rel="preconnect" href="https://tedxtist.in" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
       </head>
       {/* 2. Variables are now correctly defined and accessible here */}
       <body

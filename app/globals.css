@@ -105,3 +105,9 @@ body {
 body::-webkit-scrollbar {
   display: none;
 }
+
+
+.fab, .fas, .far {
+    font-family: "Font Awesome 5 Free" !important; /* or 6, depending on version */
+    font-weight: 900;
+}
