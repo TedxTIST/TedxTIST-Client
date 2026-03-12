@@ -91,17 +91,15 @@ export default function Button({
       onMouseLeave={handleMouseLeave}
       {...props}
     >
-      {/* Gradient border (ted red → yellow) */}
+      {/* Gradient border (ted red → yellow) — only visible on hover */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-0 z-0 rounded-[inherit]"
+        className={twMerge(
+          "pointer-events-none absolute inset-0 z-0 rounded-[inherit] transition-opacity duration-300",
+          isHovered ? "opacity-100" : "opacity-0"
+        )}
         style={{
           background: "linear-gradient(to right, #eb0028, #eab933)",
-          WebkitMask:
-            "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-          WebkitMaskComposite: "xor",
-          maskComposite: "exclude",
-          padding: "2px",
         }}
       />
       {/* Radial crimson glow using CSS variable for position */}

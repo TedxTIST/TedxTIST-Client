@@ -9,6 +9,7 @@ import CTAHeroButtons from "./components/CTAHeroButtons";
 import Carousel from "./components/Carousel";
 import DynamicSpeakerSection from "./components/DynamicSpeakerSection";
 import Footer from "./components/Footer";
+import FlyIn from "./components/FlyIn";
 // import TicketsSection from "./components/TicketsSection";
 
 export default function Home() {
@@ -17,54 +18,45 @@ export default function Home() {
       {/* Hero Section */}
       <section
         id="home"
-        className="relative flex min-h-screen items-center justify-end px-[clamp(1.5rem,5vw,6rem)]"
+        className="relative flex min-h-screen items-center justify-center px-[clamp(1.5rem,5vw,6rem)]"
       >
 
-        {/* X background image restored with next/image and blur placeholder, moved after LCP content for better LCP */}
-        <Image
-          src="/X.webp"
-          alt="Background X"
-          fill
-          className="fixed top-0 left-0 w-full h-full object-contain object-left pointer-events-none select-none"
-          priority={true}
-          unoptimized
-          fetchPriority="high"
-          sizes="(max-width: 1465px) 100vw, 1465px"
-          placeholder="blur"
-          blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/w8AAn8B9nQn2wAAAABJRU5ErkJggg=="
-        />
-
         {/* Hero Content — positioned right */}
-        <div className="z-10 flex flex-col items-start text-left max-w-[clamp(30rem,40vw,36rem)]">
-          <h1 className="text-[clamp(3rem,6vw,6rem)] font-bold leading-tight tracking-tight text-white">
-            Clarity in
-            <br />
-            <span
-              className="font-[family-name:var(--font-allura)] text-red-600"
-              style={{
-                textShadow:
-                  '0 0 24px rgba(31, 9, 9, 0.7), 0 0 12px rgba(0,0,0,0.9), 0 0 2px #470f0f',
-                background:
-                  'radial-gradient(circle, rgba(220,38,38,0.25) 0%, transparent 70%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'currentcolor',
-                MozBackgroundClip: 'text',
-                // Removed MozTextFillColor to fix TS error
-              }}
-            >
-              Chaos
-            </span>
-          </h1>
+        <div className="z-10 flex flex-col items-center text-center max-w-[clamp(30rem,40vw,36rem)]">
+          <FlyIn delay={200}>
+            <h1 className="text-[clamp(3rem,6vw,6rem)] font-medium leading-tight tracking-tight text-white">
+              Clarity in{" "}
+              <span
+                className="font-[family-name:var(--font-allura)] text-red-600 text-[1.25em]"
+                style={{
+                  textShadow:
+                    '0 0 24px rgba(31, 9, 9, 0.7), 0 0 12px rgba(0,0,0,0.9), 0 0 2px #470f0f',
+                  background:
+                    'radial-gradient(circle, rgba(220,38,38,0.25) 0%, transparent 70%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'currentcolor',
+                  MozBackgroundClip: 'text',
+                }}
+              >
+                Chaos
+              </span>
+            </h1>
+          </FlyIn>
 
-          <p className="mt-[clamp(1rem,2vh,2rem)] text-[clamp(1rem,1.5vw,1.125rem)] text-white/60">
-            Ideas worth spreading - TEDxTIST Edition 2
-          </p>
+          <FlyIn delay={500}>
+            <p className="mt-[clamp(1rem,2vh,2rem)] text-[clamp(1rem,1.5vw,1.125rem)] text-white/60">
+              Ideas worth spreading - TEDxTIST Edition 2
+            </p>
+          </FlyIn>
 
           {/* CTA Buttons */}
-          <CTAHeroButtons />
+          <FlyIn delay={800}>
+            <CTAHeroButtons />
+          </FlyIn>
 
           {/* Info Strip */}
-          <div className="mt-[clamp(2rem,4vh,3rem)] flex flex-wrap items-center gap-[clamp(1rem,2vw,1.5rem)] text-[clamp(0.75rem,1vw,0.875rem)] text-white/50">
+          <FlyIn delay={1100} className="w-full">
+          <div className="mt-[clamp(2rem,4vh,3rem)] flex flex-wrap items-center justify-center gap-[clamp(1rem,2vw,1.5rem)] text-[clamp(0.75rem,1vw,0.875rem)] text-white/50">
             {/* Location */}
             <span className="flex items-center gap-1.5">
               <svg
@@ -86,7 +78,7 @@ export default function Home() {
                   d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                 />
               </svg>
-              Toc H, Arakkunam
+              Toc H Institute, Arakkunam
             </span>
 
             {/* Date */}
@@ -127,6 +119,7 @@ export default function Home() {
               Live event
             </span>
           </div>
+          </FlyIn>
         </div>
       </section>
 
@@ -158,7 +151,7 @@ export default function Home() {
             width={1200}
             height={675}
             priority
-            quality={55}
+            quality={75}
             fetchPriority="high"
             unoptimized
             sizes="(max-width: 600px) 100vw, (max-width: 1200px) 80vw, 1200px"
