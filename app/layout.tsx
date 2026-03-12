@@ -31,8 +31,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: 'https://tedxtist.in/banner.png',
-        width: 1200,
-        height: 630,
+        width: 864,
+        height: 1080,
         alt: 'TEDxTIST Edition 2 Banner',
       },
     ],
