@@ -27,6 +27,7 @@ export default function Home() {
           fill
           className="fixed top-0 left-0 w-full h-full object-contain object-left pointer-events-none select-none"
           priority={true}
+          unoptimized
           fetchPriority="high"
           sizes="(max-width: 1465px) 100vw, 1465px"
           placeholder="blur"
@@ -159,6 +160,7 @@ export default function Home() {
             priority
             quality={55}
             fetchPriority="high"
+            unoptimized
             sizes="(max-width: 600px) 100vw, (max-width: 1200px) 80vw, 1200px"
             className="w-[100vw] max-w-none h-full object-cover object-bottom grayscale md:w-full md:max-w-full"
             style={{ left: '50%', transform: 'translateX(-50%)', position: 'relative' }}

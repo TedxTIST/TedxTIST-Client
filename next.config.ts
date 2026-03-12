@@ -24,6 +24,9 @@ const nextConfig = {
       {
         source: '/(.*)',
         headers: securityHeaders,
+        key: 'Content-Security-Policy',
+            // Notice the addition of https://cdnjs.cloudflare.com to style-src and font-src
+            value: "default-src 'self'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com data:; script-src 'self' 'unsafe-eval' 'unsafe-inline';"
       },
     ];
   },

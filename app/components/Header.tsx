@@ -44,6 +44,7 @@ export default function Header() {
               alt="TEDxTIST Logo"
               width={250}
               height={80}
+              unoptimized
               priority
               style={{ height: "auto" }}
             />
