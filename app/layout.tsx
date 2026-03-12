@@ -30,12 +30,15 @@ export const metadata: Metadata = {
     description: 'Clarity in Chaos - Join us on March 18th, 2026.',
     images: [
       {
-        url: 'https://tedxtist.in/banner.jpg',
+        url: 'https://tedxtist.in/banner.png',
         width: 1200,
         height: 630,
         alt: 'TEDxTIST Edition 2 Banner',
       },
     ],
+  },
+  icons: {
+    icon: "/logo-white-512.webp",
   },
 };
 

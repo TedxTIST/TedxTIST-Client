@@ -59,11 +59,6 @@ const speakers: Speaker[] = [
     image: "/speakers/vinupeter.webp",
   },
   {
-    name: "Zarin Shihab",
-    bio: "Born into an Indian Air Force family and raised across cities as diverse as Assam, Karnataka, Tamil Nadu, and Uttar Pradesh, Zarin grew up learning how to adapt to languages, cultures, classrooms, and constant movement. Though her roots trace back to Kerala, Hindi became her primary language of literacy, shaping her identity that was deeply cosmopolitan long before she stepped onto a film set.",
-    image: "/speakers/zarin-1.webp",
-  },
-  {
     name: "Arjun Radhakrishnan",
     bio: "Born in Nagercoil to a Tamil-Malayali household and raised in Pune, his identity was never singular. He grew up navigating languages, cultures, and perspectives: Tamil at home, Marathi in the streets, English in classrooms, Malayalam in heritage. This layered upbringing would later become one of his greatest artistic strengths. In a cinematic landscape divided by region and accent, Arjun moves fluidly across geographies, not by imitation, but by lived experience.",
     image: "/speakers/arjun.webp",
