@@ -22,7 +22,7 @@ export default function Home() {
 
         {/* X background image restored with next/image and blur placeholder, moved after LCP content for better LCP */}
         <Image
-          src="/X.png"
+          src="/X.webp"
           alt="Background X"
           fill
           className="fixed top-0 left-0 w-full h-full object-contain object-left pointer-events-none select-none"
