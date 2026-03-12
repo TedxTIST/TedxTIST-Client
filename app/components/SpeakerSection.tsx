@@ -16,6 +16,7 @@ function SpeakerImage({ src, alt, priority = false }: { src: string; alt: string
       width={450}
       height={562}
       priority={priority}
+      unoptimized
       quality={70}
       // Highly specific sizes for responsive images
       sizes="(max-width: 768px) 300px, 450px"
@@ -35,52 +36,52 @@ const speakers: Speaker[] = [
   {
     name: "Aron Kollassani Selestin",
     bio: "Aron (Aksomaniac) is a Malayalam R&B artist from Thiruvananthapuram, known for shaping the genre almost single-handedly. A trained Western classical pianist, he pivoted during the pandemic—dropping out of engineering to pursue music full-time from his bedroom studio.",
-    image: "/speakers/aksomaniac.avif",
+    image: "/speakers/aksomaniac.webp",
   },
   {
     name: "Ajas Mohammed Jansher",
     bio: "Ajas Mohammed is the Founder and CEO of Eduport, a Kerala-based EdTech startup redefining how students in India experience education. He has positioned Eduport at the forefront of personalized, adaptive learning, ensuring education is no longer one-size-fits-all but tailored to each learner's strengths, struggles, and pace.",
-    image: "/speakers/ajas.avif",
+    image: "/speakers/ajas.webp",
   },
   {
     name: "Anoop Ambika",
     bio: " Anoop Ambika is the CEO of the Kerala Startup Mission (KSUM), the state's nodal agency for entrepreneurship. He is a rare \"Practitioner-Leader\", a bureaucrat who was first a serial entrepreneur (founding companies like Genpro Research) and an engineer with a background in Computational Biology and AI. He took charge during the global \"Funding Winter\" and has successfully steered Kerala's startup ecosystem toward stability and maturity",
-    image: "/speakers/anoopambika.avif",
+    image: "/speakers/anoopambika.webp",
   },
   {
     name: "Nasima Nasir",
     bio: "Nasmina Nasir is a social entrepreneur, educator, and community leader reshaping the developmental narrative of Kerala's coastal belt. As the Founder and Director of the iLAB Innovation Laboratory Society, established in 2016, she has built a structured grassroots model to address systemic inequalities affecting fishing communities in Kozhikode.",
-    image: "/speakers/nasmina.avif",
+    image: "/speakers/nasmina.webp",
   },
   {
     name: "Vinu Peter",
     bio: "Vinu leads the company's India operations with a focus on strategy, growth, and delivery excellence. He plays a pivotal role in expanding DBiz.ai's footprint in India - strengthening capabilities, driving business performance, and ensuring alignment with the company's global vision. As Chief of People & Culture, he also leads global talent and culture initiatives that keep DBiz.ai's growth anchored in its people-first values.",
-    image: "/speakers/vinupeter.avif",
+    image: "/speakers/vinupeter.webp",
   },
   {
     name: "Zarin Shihab",
     bio: "Born into an Indian Air Force family and raised across cities as diverse as Assam, Karnataka, Tamil Nadu, and Uttar Pradesh, Zarin grew up learning how to adapt to languages, cultures, classrooms, and constant movement. Though her roots trace back to Kerala, Hindi became her primary language of literacy, shaping her identity that was deeply cosmopolitan long before she stepped onto a film set.",
-    image: "/speakers/zarin-1.avif",
+    image: "/speakers/zarin-1.webp",
   },
   {
     name: "Arjun Radhakrishnan",
     bio: "Born in Nagercoil to a Tamil-Malayali household and raised in Pune, his identity was never singular. He grew up navigating languages, cultures, and perspectives: Tamil at home, Marathi in the streets, English in classrooms, Malayalam in heritage. This layered upbringing would later become one of his greatest artistic strengths. In a cinematic landscape divided by region and accent, Arjun moves fluidly across geographies, not by imitation, but by lived experience.",
-    image: "/speakers/arjun.avif",
+    image: "/speakers/arjun.webp",
   },
   {
     name: "Jithin A Shaji",
     bio: "Jithin A. Shaji is a seasoned Planning and Project Controls Manager with over 15 years of experience leading iconic, large-scale infrastructure projects across the UK, UAE, and Bahrain. Currently at Vinci Construction, he specializes in delivering high-stakes techno-commercial excellence for major developments, including the Etihad Rail network.",
-    image: "/speakers/jithin.avif",
+    image: "/speakers/jithin.webp",
   },
   {
     name: "Mridul George",
     bio: "Born and raised in Muvattupuzha, Kerala, Mridul George followed a path familiar to many, an engineering education, followed by over a decade in the IT industry. Yet alongside spreadsheets, code, and corporate deadlines, another life was taking shape. From school and college days onward, he was a storyteller, writing, anchoring television programs, and learning early what it meant to speak to an audience. This duality would later define his work: creativity tempered by discipline, emotion structured by intent.",
-    image: "/speakers/mridul.avif",
+    image: "/speakers/mridul.webp",
   },
   {
     name: "Ritwik Aravindakshan",
     bio: "An Associate Professor of Mechanical Engineering at the Toc H Institute of Science and Technology (TIST), Dr. Aravindakshan operates at the intersections where disciplines meet and boundaries dissolve. His research journey moves fluidly from the microscopic surfaces of biomedical implants to the vast, interconnected challenges of megaproject infrastructure, revealing how the same principles of balance, foresight, and responsibility apply at every scale.",
-    image: "/speakers/ritwik.avif",
+    image: "/speakers/ritwik.webp",
   },
 ];
 

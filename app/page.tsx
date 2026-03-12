@@ -152,12 +152,12 @@ export default function Home() {
         {/* Image — right-aligned on desktop */}
         <div className="relative w-full mt-auto md:mt-0 md:absolute md:bottom-0 md:right-0 md:w-8/12">
           <Image
-            src="/TIST-main-block.png"
+            src="/TIST-main-block.webp"
             alt="TIST Campus"
             width={1200}
             height={675}
             priority
-            quality={70}
+            quality={55}
             fetchPriority="high"
             sizes="(max-width: 600px) 100vw, (max-width: 1200px) 80vw, 1200px"
             className="w-[100vw] max-w-none h-full object-cover object-bottom grayscale md:w-full md:max-w-full"
