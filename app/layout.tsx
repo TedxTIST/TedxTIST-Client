@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Allura, Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import CursorWrapper from "./components/CursorWrapper"; 
 import Header from "./components/Header";
 import "./globals.css";
@@ -47,13 +48,16 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth dark" data-theme="dark">
       <head>
         <link rel="preconnect" href="https://tedxtist.in" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-
       </head>
       {/* 2. Variables are now correctly defined and accessible here */}
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${allura.variable} antialiased relative dark bg-black`}
       >
+        {/* Defer Font Awesome CSS for non-blocking load using Next.js Script */}
+        <Script
+          src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js"
+          strategy="lazyOnload"
+        />
         <CursorWrapper />
         <Header />
         <main className="relative z-10">
