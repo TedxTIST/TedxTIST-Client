@@ -1,26 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 
-
-
-
-
 function SpeakerImage({ src, alt, priority = false }: { src: string; alt: string; priority?: boolean }) {
-  // You may want to adjust width/height based on your design
   return (
     <Image
       src={src}
       alt={alt}
-      width={450}
-      height={562}
+      fill
       priority={priority}
       unoptimized
       quality={70}
-      // Highly specific sizes for responsive images
-      sizes="(max-width: 768px) 300px, 450px"
-      className="h-full w-full object-cover object-top grayscale rounded-2xl"
+      sizes="(max-width: 768px) 80vw, 40vw"
+      className="object-cover object-top grayscale rounded-2xl"
       loading={priority ? "eager" : "lazy"}
     />
   );
@@ -45,7 +38,7 @@ const speakers: Speaker[] = [
   },
   {
     name: "Anoop Ambika",
-    bio: " Anoop Ambika is the CEO of the Kerala Startup Mission (KSUM), the state's nodal agency for entrepreneurship. He is a rare \"Practitioner-Leader\", a bureaucrat who was first a serial entrepreneur (founding companies like Genpro Research) and an engineer with a background in Computational Biology and AI. He took charge during the global \"Funding Winter\" and has successfully steered Kerala's startup ecosystem toward stability and maturity",
+    bio: "Anoop Ambika is the CEO of the Kerala Startup Mission (KSUM), the state's nodal agency for entrepreneurship. He is a rare \"Practitioner-Leader\", a bureaucrat who was first a serial entrepreneur (founding companies like Genpro Research) and an engineer with a background in Computational Biology and AI. He took charge during the global \"Funding Winter\" and has successfully steered Kerala's startup ecosystem toward stability and maturity",
     image: "/speakers/anoopambika.webp",
   },
   {
@@ -81,134 +74,179 @@ const speakers: Speaker[] = [
 ];
 
 export default function SpeakerSection() {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isTouchDevice, setIsTouchDevice] = useState<boolean | null>(null);
+
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const handleScroll = () => {
-      // Batch all DOM reads first
-      const rect = container.getBoundingClientRect();
-      const containerTop = -rect.top;
-      const scrollableHeight = container.scrollHeight - window.innerHeight;
-      if (scrollableHeight <= 0) return;
-      const rawProgress = Math.max(0, Math.min(1, containerTop / scrollableHeight));
-      // Now perform DOM writes
-      requestAnimationFrame(() => {
-        container.style.setProperty('--scroll-progress', rawProgress.toString());
-        // Calculate index for speaker change
-        const index = Math.min(
-          speakers.length - 1,
-          Math.floor(rawProgress * speakers.length)
-        );
-        setCurrentIndex(index);
-      });
+    const checkTouch = () => {
+      const hasTouch = window.matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
+      setIsTouchDevice(hasTouch);
     };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    checkTouch();
   }, []);
 
-  const speaker = speakers[currentIndex];
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
 
-  // CSS handles opacity/transform via --scroll-progress
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = Number(entry.target.getAttribute("data-index"));
+            setCurrentIndex(index);
+          }
+        });
+      },
+      {
+        root: container,
+        threshold: 0.6,
+      }
+    );
+
+    const cards = container.querySelectorAll(".speaker-card");
+    cards.forEach((card) => observer.observe(card));
+
+    return () => observer.disconnect();
+  }, []);
+
+  const scrollToSpeaker = (index: number) => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const card = container.querySelector(`[data-index="${index}"]`);
+    if (card) {
+      card.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+  };
 
   return (
-    <div
-      ref={containerRef}
-      id="speakers"
-      style={{ height: `${speakers.length * 100}vh` }}
-      className="relative"
-    >
-      {/* Sticky viewport — pins inside the tall scroll container */}
-      <div className="sticky top-0 flex h-screen flex-col justify-center overflow-hidden px-6 md:px-16 lg:px-24">
-        {/* Background glow effects */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div
-            className="absolute -bottom-32 -right-32 h-[600px] w-[600px] rounded-full opacity-30"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(220, 38, 38, 0.6) 0%, rgba(220, 38, 38, 0.1) 40%, transparent 70%)",
-            }}
-          />
-          <div
-            className="absolute -top-20 -left-20 h-[300px] w-[300px] rounded-full opacity-10"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(220, 38, 38, 0.5) 0%, transparent 70%)",
-            }}
-          />
-        </div>
+    <section id="speakers" className="relative py-16 md:py-24 overflow-hidden">
+      <style dangerouslySetInnerHTML={{ __html: `.no-scrollbar::-webkit-scrollbar { display: none; }` }} />
 
-        {/* Speaker Content — crossfade based on scroll */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
-          className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:gap-16 speaker-fade"
-        >
-          {/* Top on mobile, Left on desktop: Name + Bio */}
-          <div className="order-1 flex flex-col flex-1 min-w-0 md:w-1/2">
-            <h2 className="font-[family-name:var(--font-allura)] text-5xl leading-tight text-red-600 sm:text-5xl lg:text-7xl">
-              <span style={{ textShadow: '0 0 12px rgba(0, 0, 0, 0.9), 0 0 2px #470f0f' }}>{speaker.name}</span>
-            </h2>
-            <p className="mt-3 md:mt-6 max-w-lg text-base leading-relaxed text-white/70 sm:text-lg md:text-base lg:text-xl line-clamp-5 md:line-clamp-none">
-              {speaker.bio}
-            </p>
-          </div>
+          className="absolute -bottom-32 -right-32 h-[600px] w-[600px] rounded-full opacity-30"
+          style={{
+            background: "radial-gradient(circle, rgba(220, 38, 38, 0.6) 0%, rgba(220, 38, 38, 0.1) 40%, transparent 70%)",
+          }}
+        />
+        <div
+          className="absolute -top-20 -left-20 h-[300px] w-[300px] rounded-full opacity-10"
+          style={{
+            background: "radial-gradient(circle, rgba(220, 38, 38, 0.5) 0%, transparent 70%)",
+          }}
+        />
+      </div>
 
-          {/* Bottom on mobile, Right on desktop: Speaker Image */}
-          <div className="order-2 relative flex items-center justify-center md:w-1/2">
-            <div className="relative h-[300px] w-[240px] sm:h-[360px] sm:w-[290px] md:h-[350px] md:w-[300px] lg:h-[550px] lg:w-[450px]">
-              <div className="absolute inset-0 overflow-hidden rounded-2xl">
-                <SpeakerImage src={speaker.image} alt={speaker.name} priority={currentIndex === 0} />
+      <div
+        ref={scrollContainerRef}
+        className="flex w-full overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar items-center"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        {speakers.map((speaker, idx) => (
+          <div
+            key={speaker.name}
+            data-index={idx}
+            className="speaker-card relative z-10 flex w-full shrink-0 snap-center flex-col md:flex-row md:items-center justify-between px-6 md:px-0 pb-8"
+          >
+            {/* 1. RELATIVE LEFT GUTTER / PREV BUTTON (10% Width) */}
+            <div className="hidden md:flex items-center justify-center w-[10%] shrink-0">
+              {isTouchDevice === false && idx > 0 && (
+                <button
+                  onClick={() => scrollToSpeaker(idx - 1)}
+                  className="group flex flex-row items-center gap-2 p-2 text-white/50 hover:text-white transition-colors focus:outline-none"
+                  aria-label="Previous speaker"
+                >
+                  <div className="rounded-full bg-white/5 group-hover:bg-white/20 p-2 md:p-3 transition-colors border border-transparent group-hover:border-white/40 backdrop-blur-sm shrink-0">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform rotate-180">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </div>
+                  {/* Text only renders on large screens to prevent flex squeezing */}
+                  <span className="text-xs tracking-widest uppercase opacity-0 group-hover:opacity-100 transition-opacity hidden lg:block whitespace-nowrap">Prev</span>
+                </button>
+              )}
+            </div>
+
+            {/* 2. RELATIVE TEXT AREA (40% Width) */}
+            <div className="flex flex-col justify-center w-full md:w-[40%] px-0 md:px-4 lg:px-8 mt-6 md:mt-0 order-first md:order-none shrink-0">
+              <h2 className="font-[family-name:var(--font-allura)] text-5xl leading-tight text-red-600 sm:text-5xl lg:text-7xl">
+                <span style={{ textShadow: "0 0 12px rgba(0, 0, 0, 0.9), 0 0 2px #470f0f" }}>
+                  {speaker.name}
+                </span>
+              </h2>
+              <p className="mt-3 md:mt-6 text-base leading-relaxed text-white/70 sm:text-lg lg:text-xl line-clamp-5 md:line-clamp-none">
+                {speaker.bio}
+              </p>
+            </div>
+
+            {/* 3. RELATIVE IMAGE AREA (40% Width) + Mobile Swipe Hint */}
+            <div className="flex flex-row items-center justify-center w-full md:w-[40%] mt-8 md:mt-0 shrink-0 gap-4 lg:gap-8">
+              
+              {/* Image uses Aspect Ratio scaling instead of fixed pixels */}
+              <div className="relative w-full max-w-[260px] sm:max-w-[320px] md:max-w-[350px] lg:max-w-[450px] aspect-[4/5] shrink-0">
+                <div className="absolute inset-0 overflow-hidden rounded-2xl shadow-xl">
+                  <SpeakerImage src={speaker.image} alt={speaker.name} priority={idx === 0} />
+                </div>
+                {/* Decorative bottom glow */}
+                <div
+                  className="absolute -bottom-8 left-1/2 -z-10 h-[50%] w-[80%] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
+                  style={{ background: "rgba(220, 38, 38, 0.5)" }}
+                />
               </div>
-              <div
-                className="absolute -bottom-8 left-1/2 -z-10 h-[200px] w-[300px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
-                style={{ background: "rgba(220, 38, 38, 0.5)" }}
-              />
+
+              {/* MOBILE SWIPE HINT (In normal document flow, directly beside the image) */}
+              {isTouchDevice === true && idx < speakers.length - 1 && (
+                <div className="flex md:hidden flex-col items-center justify-center gap-1 text-white/40 animate-pulse shrink-0">
+                  <span className="text-[10px] tracking-widest uppercase hidden sm:block">Swipe</span>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </div>
+              )}
+            </div>
+
+            {/* 4. RELATIVE RIGHT GUTTER / NEXT BUTTON (10% Width) */}
+            <div className="hidden md:flex items-center justify-center w-[10%] shrink-0">
+              {isTouchDevice === false && idx < speakers.length - 1 && (
+                <button
+                  onClick={() => scrollToSpeaker(idx + 1)}
+                  className="group flex flex-row items-center gap-2 p-2 text-white/50 hover:text-white transition-colors focus:outline-none"
+                  aria-label="Next speaker"
+                >
+                  <span className="text-xs tracking-widest uppercase opacity-0 group-hover:opacity-100 transition-opacity hidden lg:block whitespace-nowrap">Next</span>
+                  <div className="rounded-full bg-white/5 group-hover:bg-white/20 p-2 md:p-3 transition-colors border border-transparent group-hover:border-white/40 backdrop-blur-sm shrink-0">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </div>
+                </button>
+              )}
             </div>
           </div>
-        </div>
-
-        {/* Navigation Indicators */}
-        <div className="relative z-10 mt-4 flex items-center justify-between md:mt-16">
-          {/* Dot indicators — scroll-driven, no click navigation needed */}
-          <div className="flex items-center gap-2">
-            {speakers.map((_, i) => (
-              <div
-                key={i}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  i === currentIndex
-                    ? "w-8 bg-red-600"
-                    : "w-2 bg-white/30"
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* Counter */}
-          <span className="text-sm tabular-nums text-white/40">
-            {String(currentIndex + 1).padStart(2, "0")} /{" "}
-            {String(speakers.length).padStart(2, "0")}
-          </span>
-        </div>
-
-        {/* Scroll hint — only visible on the first speaker */}
-        {currentIndex === 0 && (
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce text-white/30">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
-        )}
+        ))}
       </div>
-    </div>
+
+      {/* Navigation Indicators */}
+      <div className="relative z-10 mt-8 flex items-center justify-between px-6 md:px-16 lg:px-24">
+        <div className="flex items-center gap-2">
+          {speakers.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => scrollToSpeaker(i)}
+              aria-label={`Go to speaker ${i + 1}`}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                i === currentIndex ? "w-8 bg-red-600" : "w-2 bg-white/30 hover:bg-white/50"
+              }`}
+            />
+          ))}
+        </div>
+
+        <span className="text-sm tabular-nums text-white/40 font-mono">
+          {String(currentIndex + 1).padStart(2, "0")} / {String(speakers.length).padStart(2, "0")}
+        </span>
+      </div>
+    </section>
   );
 }
