@@ -40,7 +40,7 @@ const Footer = () => {
         <footer className="bg-black/90 text-gray-400 py-8 border-t border-white/10 mt-20">
             <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between">
                 <p className="text-sm font-medium">
-                    &copy; {new Date().getFullYear()} <span className="text-red-600">TEDx</span>TIST. All rights reserved.
+                    &copy; {new Date().getFullYear()} <span className="tedx-red-glow text-red-600">TEDx</span>TIST. All rights reserved.
                 </p>
                 
                 <div className="flex space-x-6 mt-6 md:mt-0">
@@ -51,7 +51,7 @@ const Footer = () => {
                             target="_blank" 
                             rel="noopener noreferrer" 
                             aria-label={`Follow TEDxTIST on ${social.name}`}
-                            className="hover:text-red-600 transition-all duration-300 transform hover:scale-110"
+                            className="tedx-red-glow-hover hover:text-red-600 transition-all duration-300 transform hover:scale-110"
                         >
                             <svg 
                                 xmlns="http://www.w3.org/2000/svg" 

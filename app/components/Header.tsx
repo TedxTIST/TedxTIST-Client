@@ -12,6 +12,18 @@ const navLinks = [
   { label: "Us", href: "#us" },
 ];
 
+function scrollToSection(href: string) {
+  const target =
+    href === "#sponsors"
+      ? document.querySelector('[data-scroll-target="sponsors"]')
+      : document.querySelector(href);
+
+  target?.scrollIntoView({
+    behavior: "smooth",
+    block: href === "#sponsors" ? "center" : "start",
+  });
+}
+
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -55,11 +67,7 @@ export default function Header() {
           {navLinks.map((link) => (
             <Button
               key={link.href}
-              onClick={() => {
-                document
-                  .querySelector(link.href)
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }}
+              onClick={() => scrollToSection(link.href)}
             >
               {link.label}
             </Button>
@@ -102,9 +110,7 @@ export default function Header() {
             className="w-4/5 text-center"
             onClick={() => {
               setMenuOpen(false);
-              document
-                .querySelector(link.href)
-                ?.scrollIntoView({ behavior: "smooth" });
+              scrollToSection(link.href);
             }}
           >
             {link.label}
