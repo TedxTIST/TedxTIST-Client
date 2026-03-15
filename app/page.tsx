@@ -10,6 +10,7 @@ import Carousel from "./components/Carousel";
 import DynamicSpeakerSection from "./components/DynamicSpeakerSection";
 import Footer from "./components/Footer";
 import FlyIn from "./components/FlyIn";
+import SponsorsSection from "./components/SponsorsSection";
 // import TicketsSection from "./components/TicketsSection";
 
 export default function Home() {
@@ -27,16 +28,7 @@ export default function Home() {
             <h1 className="text-[clamp(3rem,6vw,6rem)] font-medium leading-tight tracking-tight text-white">
               Clarity in{" "}
               <span
-                className="font-[family-name:var(--font-allura)] text-red-600 text-[1.25em]"
-                style={{
-                  textShadow:
-                    '0 0 24px rgba(31, 9, 9, 0.7), 0 0 12px rgba(0,0,0,0.9), 0 0 2px #470f0f',
-                  background:
-                    'radial-gradient(circle, rgba(220,38,38,0.25) 0%, transparent 70%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'currentcolor',
-                  MozBackgroundClip: 'text',
-                }}
+                className="tedx-red-glow font-[family-name:var(--font-allura)] text-red-600 text-[1.25em]"
               >
                 Chaos
               </span>
@@ -131,7 +123,7 @@ export default function Home() {
       >
         {/* Text Content — Left */}
         <div className="z-10 flex w-full flex-col md:w-5/12 items-start text-left max-w-xl pt-[clamp(4rem,10vh,6rem)] md:pt-0">
-          <h2 className="text-[clamp(2.5rem,5vw,4.5rem)] font-bold leading-tight text-red-600">
+          <h2 className="tedx-red-glow text-[clamp(2.5rem,5vw,4.5rem)] font-bold leading-tight text-red-600">
             About
           </h2>
           <p className="mt-[clamp(1rem,2vh,1.5rem)] text-[clamp(1rem,1.5vw,1.25rem)] leading-relaxed text-white/80">
@@ -180,13 +172,7 @@ export default function Home() {
 
 
       {/* Sponsors Section */}
-      <section
-        id="sponsors"
-        className="flex min-h-screen flex-col items-center justify-center px-[clamp(1.5rem,5vw,6rem)] text-center"
-      >
-        <h2 className="text-[clamp(2rem,3vw,2.5rem)] font-bold text-white">Sponsors</h2>
-        <p className="mt-[clamp(0.5rem,1vh,1rem)] max-w-lg text-[clamp(1rem,1.5vw,1.125rem)] text-white/50">Coming soon.</p>
-      </section>
+      <SponsorsSection />
 
       {/* Us Section */}
       <section
@@ -194,7 +180,7 @@ export default function Home() {
         className="relative flex min-h-screen flex-col items-center justify-center px-[clamp(1.5rem,5vw,6rem)] pb-0 text-center w-full overflow-x-hidden"
       >
         <div className="flex-1 w-full flex flex-col items-center justify-center pb-[clamp(2rem,5vh,4rem)]">
-          <h2 className="mb-[clamp(0.5rem,1vh,1rem)] text-[clamp(2.5rem,5vw,4.5rem)] font-bold leading-tight text-red-600">
+          <h2 className="tedx-red-glow mb-[clamp(0.5rem,1vh,1rem)] text-[clamp(2.5rem,5vw,4.5rem)] font-bold leading-tight text-red-600">
             The Team
           </h2>
           <p className="mb-[clamp(1.5rem,3vh,2.5rem)] max-w-lg text-[clamp(1rem,1.5vw,1.125rem)] text-white/60">

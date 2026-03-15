@@ -13,7 +13,7 @@ export default function TicketsSection() {
       {/* UPDATED: We moved the global left padding (pl-[...]) here so the text stays aligned with your other sections */}
       <div className="z-10 flex w-full flex-col items-start justify-center md:w-[45%] pl-[clamp(1.5rem,5vw,6rem)] pr-[clamp(1.5rem,5vw,6rem)] md:pr-0 shrink-0 py-[clamp(4rem,10vh,6rem)]">
         {/* Heading */}
-        <h2 className="mb-[clamp(0.5rem,1.5vh,1rem)] text-[clamp(3.5rem,7vw,6.5rem)] font-black uppercase leading-none tracking-wide text-[#eb0028]">
+        <h2 className="tedx-red-glow mb-[clamp(0.5rem,1.5vh,1rem)] text-[clamp(3.5rem,7vw,6.5rem)] font-black uppercase leading-none tracking-wide text-[#eb0028]">
           <span className="block pt-25 md:pt-0">TICKETS</span>
         </h2>
         

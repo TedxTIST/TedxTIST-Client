@@ -171,8 +171,8 @@ export default function SpeakerSection() {
 
             {/* 2. RELATIVE TEXT AREA (40% Width) */}
             <div className="flex flex-col justify-center w-full md:w-[40%] px-0 md:px-4 lg:px-8 mt-6 md:mt-0 order-first md:order-none shrink-0">
-              <h2 className="font-[family-name:var(--font-allura)] text-5xl leading-tight text-red-600 sm:text-5xl lg:text-7xl">
-                <span style={{ textShadow: "0 0 12px rgba(0, 0, 0, 0.9), 0 0 2px #470f0f" }}>
+              <h2 className="tedx-red-glow font-[family-name:var(--font-allura)] text-5xl leading-tight text-red-600 sm:text-5xl lg:text-7xl">
+                <span>
                   {speaker.name}
                 </span>
               </h2>
