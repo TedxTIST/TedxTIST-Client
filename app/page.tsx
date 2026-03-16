@@ -124,14 +124,10 @@ export default function Home() {
         {/* Text Content — Left */}
         <div className="z-10 flex w-full flex-col md:w-5/12 items-start text-left max-w-xl pt-[clamp(4rem,10vh,6rem)] md:pt-0">
           <h2 className="tedx-red-glow text-[clamp(2.5rem,5vw,4.5rem)] font-bold leading-tight text-red-600">
-            About
+            Welcome to TEDxTIST
           </h2>
           <p className="mt-[clamp(1rem,2vh,1.5rem)] text-[clamp(1rem,1.5vw,1.25rem)] leading-relaxed text-white/80">
-            Toc H Institute of Science and Technology (TIST) is a NAAC-accredited engineering
-            and management institution that emphasizes global technological advancements,
-            innovation and holistic student development. Offering a comprehensive range of
-            B.Tech, M.Tech and MBA programmes, the institute focuses on interdisciplinary collaboration
-            and entrepreneurship to incubate "job creators" rather than just job seekers.
+            TEDxTIST is an independently organized TEDx event hosted at Toc H Institute of Science and Technology (TIST), inspired by TED's mission of “ideas worth spreading.” It brings together innovators, thinkers and storytellers who share perspectives that spark curiosity, challenge assumptions and inspire meaningful conversations.TEDxTIST brings together diverse voices and powerful ideas, encouraging people to reflect, question and find clarity even in times of uncertainty.
           </p>
         </div>
 
