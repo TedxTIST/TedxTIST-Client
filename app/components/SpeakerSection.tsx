@@ -42,7 +42,7 @@ const speakers: Speaker[] = [
     image: "/speakers/anoopambika.webp",
   },
   {
-    name: "Nasima Nasir",
+    name: "Nasmina Nasir",
     bio: "Nasmina Nasir is a social entrepreneur, educator, and community leader reshaping the developmental narrative of Kerala's coastal belt. As the Founder and Director of the iLAB Innovation Laboratory Society, established in 2016, she has built a structured grassroots model to address systemic inequalities affecting fishing communities in Kozhikode.",
     image: "/speakers/nasmina.webp",
   },
