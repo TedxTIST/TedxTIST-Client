@@ -53,7 +53,7 @@ export default function SponsorsSection() {
             </span>
 
             <div className="flex w-full max-w-xl flex-col items-center justify-center">
-              <div className="flex min-h-[clamp(130px,18vw,190px)] w-[clamp(300px,42vw,540px)] items-center justify-center rounded-2xl border border-white/10 bg-white/[0.048] px-6 py-5">
+              <div className="flex min-h-[clamp(130px,18vw,190px)] w-[clamp(300px,42vw,540px)] items-center justify-center rounded-2xl border border-white/10 bg-white/[0.048] px-6 py-5 transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06] hover:-translate-y-1">
                 <Image
                   src={titleSponsor.logoSrc}
                   alt={titleSponsor.name}
