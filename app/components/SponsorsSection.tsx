@@ -1,13 +1,19 @@
 import Image from "next/image";
 import FlyIn from "./FlyIn";
 
+type Sponsor = {
+  name: string;
+  category: string;
+  logoSrc?: string;
+};
+
 const titleSponsor = {
   name: "Global Reach",
   category: "Title Sponsor",
   logoSrc: "/sponsors/global-reach.png",
 };
 
-const categorySponsors = [
+const categorySponsors: Sponsor[] = [
   {
     name: "Carestack",
     category: "Technology Sponsor",
@@ -22,6 +28,11 @@ const categorySponsors = [
     name: "Sangeeth Mahal Musicals",
     category: "Instrument Sponsor",
     logoSrc: "/sponsors/sangeeth-mahal-musicals.png",
+  },
+  {
+    name: "Ticketing Partner",
+    category: "Ticketing Partner",
+    logoSrc: "/sponsors/snaptiqz.png",
   },
 ];
 
@@ -81,7 +92,7 @@ export default function SponsorsSection() {
 
         {/* Category Sponsors */}
         <FlyIn delay={550} className="w-full">
-          <div className="mt-[clamp(1rem,2vh,1.5rem)] grid grid-cols-1 sm:grid-cols-3 gap-[clamp(1rem,2vw,1.5rem)] max-w-5xl mx-auto w-full items-start">
+          <div className="mt-[clamp(1rem,2vh,1.5rem)] grid grid-cols-1 sm:grid-cols-4 gap-[clamp(1rem,2vw,1.5rem)] max-w-5xl mx-auto w-full items-start">
             {categorySponsors.map((sponsor) => (
               <div
                 key={sponsor.category}
@@ -93,15 +104,21 @@ export default function SponsorsSection() {
                 </span>
 
                 <div className="my-4 flex min-h-[clamp(90px,10vw,120px)] w-full items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4">
-                  <Image
-                    src={sponsor.logoSrc}
-                    alt={sponsor.name}
-                    width={480}
-                    height={240}
-                    priority={false}
-                    unoptimized
-                    className="h-auto max-h-[96px] w-full object-contain"
-                  />
+                  {sponsor.logoSrc ? (
+                    <Image
+                      src={sponsor.logoSrc}
+                      alt={sponsor.name}
+                      width={480}
+                      height={240}
+                      priority={false}
+                      unoptimized
+                      className="h-auto max-h-[96px] w-full object-contain"
+                    />
+                  ) : (
+                    <span className="text-sm font-semibold uppercase tracking-[0.12em] text-white/80">
+                      Ticketing Partner
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
