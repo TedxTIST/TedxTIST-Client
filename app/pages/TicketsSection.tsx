@@ -1,7 +1,7 @@
 "use client";
 
-import Button from "./Button";
-import WatchPartyTooltip from "./WatchPartyTooltip";
+import Button from "../components/Button";
+import WatchPartyTooltip from "../components/WatchPartyTooltip";
 
 export default function TicketsSection() {
   return (

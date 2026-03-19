@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import FlyIn from "./FlyIn";
-import CTAHeroButtons from "./CTAHeroButtons";
-import HeroFluidX from "./HeroFluidX";
+import FlyIn from "../components/FlyIn";
+import CTAHeroButtons from "../components/CTAHeroButtons";
+import HeroFluidX from "../components/HeroFluidX";
 
 export default function HeroSection() {
   const [step, setStep] = useState(0);

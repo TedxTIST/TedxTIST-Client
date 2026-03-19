@@ -1,5 +1,5 @@
 import Image from "next/image";
-import FlyIn from "./FlyIn";
+import FlyIn from "../components/FlyIn";
 
 const titleSponsor = {
   name: "Global Reach",

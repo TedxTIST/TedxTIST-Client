@@ -6,11 +6,11 @@ export const revalidate = 600; // 10 minutes
 
 import Image from "next/image";
 import CTAHeroButtons from "./components/CTAHeroButtons";
-import Carousel from "./components/Carousel";
+import Carousel from "./pages/Carousel";
 import DynamicSpeakerSection from "./components/DynamicSpeakerSection";
 import Footer from "./components/Footer";
 import FlyIn from "./components/FlyIn";
-import SponsorsSection from "./components/SponsorsSection";
+import SponsorsSection from "./pages/SponsorsSection";
 // import TicketsSection from "./components/TicketsSection";
 
 export default function Home() {

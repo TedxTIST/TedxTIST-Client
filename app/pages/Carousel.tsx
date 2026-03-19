@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useLayoutEffect, memo } from "react";
-import teamData from "./team.json";
-import TeamMemberImage from "./TeamMemberImage";
+import teamData from "../components/team.json";
+import TeamMemberImage from "../components/TeamMemberImage";
 
 type Slide = {
   id: string;

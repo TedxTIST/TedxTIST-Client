@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 
-const SpeakerSection = dynamic(() => import("./SpeakerSection"), {
+const SpeakerSection = dynamic(() => import("../pages/SpeakerSection"), {
   ssr: false,
   loading: () => <div className="min-h-screen animate-pulse bg-black/20" />,
 });
