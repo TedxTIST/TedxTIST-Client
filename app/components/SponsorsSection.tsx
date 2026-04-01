@@ -36,6 +36,21 @@ const categorySponsors: Sponsor[] = [
   },
 ];
 
+const dualSponsors = {
+  name: "Dual Sponsors",
+  category: "Curated Gift Sponsors",
+  sponsors: [
+    {
+      name: "Sponsor 1",
+      logoSrc: "/sponsors/MYOP.png",
+    },
+    {
+      name: "Sponsor 2",
+      logoSrc: "/sponsors/miraen.png",
+    },
+  ],
+};
+
 export default function SponsorsSection() {
   return (
     <section
@@ -92,7 +107,7 @@ export default function SponsorsSection() {
 
         {/* Category Sponsors */}
         <FlyIn delay={550} className="w-full">
-          <div className="mt-[clamp(1rem,2vh,1.5rem)] grid grid-cols-1 sm:grid-cols-4 gap-[clamp(1rem,2vw,1.5rem)] max-w-5xl mx-auto w-full items-start">
+          <div className="mt-[clamp(1rem,2vh,1.5rem)] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[clamp(1rem,2vw,1.5rem)] max-w-5xl mx-auto w-full items-start">
             {categorySponsors.map((sponsor) => (
               <div
                 key={sponsor.category}
@@ -122,6 +137,38 @@ export default function SponsorsSection() {
                 </div>
               </div>
             ))}
+          </div>
+        </FlyIn>
+
+        {/* Dual Sponsors Card */}
+        <FlyIn delay={650} className="w-full">
+          <div className="mt-[clamp(2rem,4vh,2.75rem)] flex flex-col items-center">
+            <div className="flex w-full max-w-2xl flex-col items-center justify-center">
+              <div className="flex min-h-[250px] w-full flex-col items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-[clamp(1.5rem,3vw,2rem)] py-[clamp(1.5rem,3vh,2rem)] transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06] hover:-translate-y-1">
+                <span className="tedx-red-glow text-[clamp(0.6rem,0.9vw,0.7rem)] font-semibold uppercase tracking-[0.15em] text-red-600/70">
+                  {dualSponsors.category}
+                </span>
+
+                <div className="my-4 flex w-full gap-[clamp(0.75rem,1.5vw,1rem)]">
+                  {dualSponsors.sponsors.map((sponsor, index) => (
+                    <div
+                      key={index}
+                      className="flex flex-1 min-h-[clamp(80px,8vw,100px)] items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] px-3 py-3"
+                    >
+                      <Image
+                        src={sponsor.logoSrc}
+                        alt={sponsor.name}
+                        width={240}
+                        height={120}
+                        priority={false}
+                        unoptimized
+                        className="h-auto max-h-[80px] w-full object-contain"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </FlyIn>
       </div>
